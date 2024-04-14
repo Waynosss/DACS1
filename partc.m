@@ -98,7 +98,7 @@ EIsec2 = EI(t_sec2, abdsec2(4:6, 4:6));
 
 %Force Distributions 
 sf = 2;
-F_equiv = M * R * t_skin / (pi/4 * (R^4 - (R - t_skin)^3)); 
+F_equiv = M * R * t_skin / (pi/4 * (R^4 - (R - t_skin)^4)); 
 Ftot = F_equiv * sf;
 
 Fskin = Ftot * EA_axialskin / (EA_sec1 + EA_sec2);

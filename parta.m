@@ -22,7 +22,7 @@ thick = 7e-3;
 
 %%Calcs
 %%Aluminium
-bucklingcritmoment = sigmacrit(69e9, 0.29, R, thick) * pi * R^2 * thick 
+bucklingcritmoment = sigmacrit(Ex, vxy, R, thick) * pi * R^2 * thick 
 max_bending_aly = M*R / (pi/4 * (R^4 - (R-thick)^4)) ;
 max_shear_aly = 2*V / (pi * (R^2 - (R-thick)^2));
 

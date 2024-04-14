@@ -22,10 +22,18 @@ rho = 1610;
 %% Skin Layups
 %%Skin layups
 
-layup1 = zeros([1,180]) + 45;
-layup1(1:3) = [45, -45, 45];
-layup1(97:165) = 0;
-layup1(35:55) = 45;
+% layup1 = zeros([1,180]) + 45;
+% layup1(1:3) = [45, -45, 45];
+% layup1(97:165) = 0;
+% layup1(35:55) = 45;
+
+l1 = [45, -45, 45, -45, 45, -45, 45, -45, 45, -45];
+l2 = [30, -30, 30, -30, 30, -30, 30, -30];
+l3 = [60, -60, 60, -60];
+l4 = [0, 90, 90, 0];
+l5 = [l1, l2, l3, l4];
+l6 = flip(l5, 2);
+layup1 = [l5, l6];
 
 
 
@@ -34,7 +42,7 @@ layup1(35:55) = 45;
 thicknesses1 = thicknessesgen(layup1, t);
 t_skin = numel(thicknesses1) * t ;
 
-thicknessm = numel(thicknesses1) * t * 1000
+thicknessm = numel(thicknesses1) * t * 1000;
 skinarea = pi*(R^2 - (R-sum(thicknesses1))^2);
 
 
@@ -48,10 +56,13 @@ D1 = ABD1(4:6,4:6);
 b = 0.7;
 mof = 1.1;
 
+I_z = pi/4 * (R^4 - (R - t_skin)^4);
+stress_bottom = -M * R / I_z;
 
-F_equiv = M * R * t_skin / (pi/4 * (R^4 - (R - t_skin)^3)) 
+F_equiv = stress_bottom * t_skin;
 
-FI1 = safetyfact(-2 * F_equiv, ABD1, thicknesses1, layup1, Q_lam1, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
+FI1 = safetyfact(2 * F_equiv, ABD1, thicknesses1, layup1, Q_lam1, Xt,...
+    Xc, Yt, Yc, vxy, mof, Ex, S);
 
 AR = linspace(0.6, 7, 100);
 
@@ -65,19 +76,20 @@ end
 load = min(N0_top,[],1);
 plot(AR, load)
 hold on 
-F = zeros(size(AR)) + (M/R / b);
+F = zeros(size(AR)) + F_equiv;
 plot(AR, F)
 title('AR vs Critical Buckling Load')
 
 buckling_load = min(N0_top,[],"all");
 
-a = 1;
-b = 0.7;
-AR = a/b
+a = 0.5;
+b = 0.8;
+AR = a/b;
 
-Ncrit = platebucklingccss(D1, AR, a, m) / b % N
+Ncrit = platebucklingccss(D1, AR, a, m); % N/m
 FI1
-bucklingSF = Ncrit / ( M / R )   % N / N
+
+bucklingSF =   Ncrit / F_equiv   % N/m / N/m
  
 weight = skinarea * rho
 
