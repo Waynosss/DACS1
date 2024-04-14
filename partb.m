@@ -34,7 +34,7 @@ layup1(35:55) = 45;
 thicknesses1 = thicknessesgen(layup1, t);
 t_skin = numel(thicknesses1) * t ;
 
-thickness = numel(thicknesses1) * t * 1000
+thicknessm = numel(thicknesses1) * t * 1000
 skinarea = pi*(R^2 - (R-sum(thicknesses1))^2);
 
 
@@ -47,7 +47,11 @@ D1 = ABD1(4:6,4:6);
 
 b = 0.7;
 mof = 1.1;
-FI1 = safetyfact(-2 * M/R, ABD1, thicknesses1, layup1, Q_lam1, Xt, Xc, Yt, Yc, vxy, mof, Ex, S);
+
+
+F_equiv = M * R * t_skin / (pi/4 * (R^4 - (R - t_skin)^3)) 
+
+FI1 = safetyfact(-2 * F_equiv, ABD1, thicknesses1, layup1, Q_lam1, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
 
 AR = linspace(0.6, 7, 100);
 
@@ -71,7 +75,7 @@ a = 1;
 b = 0.7;
 AR = a/b
 
-Ncrit = platebucklingccss(D1, AR, a, m) / b %N
+Ncrit = platebucklingccss(D1, AR, a, m) / b % N
 FI1
 bucklingSF = Ncrit / ( M / R )   % N / N
  

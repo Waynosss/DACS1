@@ -25,8 +25,9 @@ a = 0.7;
 b_spacing = 0.8;
 AR = a/b_spacing;
 
-sf = 2;
-Ftot = M/R * sf;
+
+
+
 
 skinlayup = [45, -45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
@@ -54,9 +55,9 @@ section2_b = 110e-3;
 thicknessesskin= thicknessesgen(skinlayup, t);
 t_skin = sum(thicknessesskin);
 thicknessessec1= thicknessesgen(tsection1, t);
-t_sec1= sum(thicknessesskin);
+t_sec1= sum(thicknessessec1);
 thicknessessec2= thicknessesgen(tsection2, t);
-t_sec2 = sum(thicknessesskin);
+t_sec2 = sum(thicknessessec2);
 
 
 %Skin
@@ -96,6 +97,10 @@ abdsec2 = ABDsec2^-1 ;
 EIsec2 = EI(t_sec2, abdsec2(4:6, 4:6));
 
 %Force Distributions 
+sf = 2;
+F_equiv = M * R * t_skin / (pi/4 * (R^4 - (R - t_skin)^3)); 
+Ftot = F_equiv * sf;
+
 Fskin = Ftot * EA_axialskin / (EA_sec1 + EA_sec2);
 Fsec1 = Ftot * EA_sec1 / (EA_axialskin + EA_sec2);
 Fsec2 = Ftot * EA_sec2 / (EA_axialskin + EA_sec1);
