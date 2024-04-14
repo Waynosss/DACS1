@@ -1,6 +1,6 @@
 clear
 close
-
+%% Variables
 M = 15e6;
 V = 1.5e6;
 R = 3;
@@ -18,8 +18,9 @@ S = 230e6;
 
 rho = 2770;
 
-thick = 2.5e-3;
+thick = 7e-3;
 
+%%Calcs
 %%Aluminium
 bucklingcritmoment = sigmacrit(69e9, 0.29, R, thick) * pi * R^2 * thick 
 max_bending_aly = M*R / (pi/4 * (R^4 - (R-thick)^4)) ;

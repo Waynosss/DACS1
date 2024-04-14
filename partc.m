@@ -1,3 +1,6 @@
+clear 
+
+
 M = 15e6;
 V = 1.5e6;
 R = 3;
@@ -27,14 +30,9 @@ Ftot = M/R * sf;
 
 skinlayup = [45, -45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
-    45, -45, 45, -45, 45, -45,-45, 45, -45,45, ...
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ...
+    0, 0,0, 0, 0, 45, -45,-45, 45, -45,45, ...
     -45, 45, -45, 45, -45, 45, -4-45, 45, 45];
-
-tsection1 = [45, 45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45,...
-    -45,  90, 0,  0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0,...
-    90, -45, 45, 45, 45, 45, -45, 90, 0,  0, 0, 0, 0, 0, 0 ...
-    90, -45, 45, 45, 45, 45, -45, 90, 0, 90, -45, 45];
 
 tsection1 = [45, -45, 45, -45, 0, 0, 0, 0, 90, 0, 0, 0, 0, -45, 45, -45, 45];
 tsection1 = [tsection1, tsection1, tsection1];
@@ -71,6 +69,7 @@ Dskin = ABDskin(4:6,4:6);
 m=4;
 Pcr = platebucklingssuniax(Dskin, AR, a, m);
 Px = M/R;
+
 bskin = a / 2*(1+2 * (a+Askin(2,1)/Askin(1,1)) * (1 - Pcr/Px) * ...
     (Askin(1,1)/(Askin(1,1)+3*Askin(2,2))));
 EA_axialskin = EA(t_skin, Askin, bskin);
@@ -85,7 +84,7 @@ Q_lamsec1 = Qlam(Ex, Ey, vxy, Gxy);
 Q_arraysec1 = Qarray(tsection1, Q_lamsec1);
 ABDsec1 = ABD_matrix(tsection1, thicknessessec1, Q_arraysec1);
 EA_sec1 = EA(t_sec1, ABDsec1(1:3,1:3), section1_b);
-abdsec1 = ABDsec1^-1;
+abdsec1 = ABDsec1^-1 ;
 EIsec1 = EI(t_sec1, abdsec1(4:6, 4:6));
 
 %Section 2 : vertical to skin
@@ -93,27 +92,27 @@ Q_lamsec2 = Qlam(Ex, Ey, vxy, Gxy);
 Q_arraysec2 = Qarray(tsection2, Q_lamsec2);
 ABDsec2 = ABD_matrix(tsection2, thicknessessec2, Q_arraysec2);
 EA_sec2 = EA(t_sec2, ABDsec2(1:3,1:3), section2_b);
-abdsec2 = ABDsec2^-1;
+abdsec2 = ABDsec2^-1 ;
 EIsec2 = EI(t_sec2, abdsec2(4:6, 4:6));
 
-
-
 %Force Distributions 
-Fskin = Ftot * EA_axialskin / (EA_sec1 + EA_sec2) ;
-Fsec1 = Ftot * EA_sec1 / (EA_axialskin + EA_sec2) ;
-Fsec2 = Ftot * EA_sec2 / (EA_axialskin + EA_sec1) ;
+Fskin = Ftot * EA_axialskin / (EA_sec1 + EA_sec2);
+Fsec1 = Ftot * EA_sec1 / (EA_axialskin + EA_sec2);
+Fsec2 = Ftot * EA_sec2 / (EA_axialskin + EA_sec1);
 
 %Puck failure checking
 mof = 1.1;
 
-FIskin = safetyfact(Fskin / (bskin*2), ABDskin, thicknessesskin, skinlayup, Q_lamskin,...
-    Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
-FIsec1 = safetyfact(Fsec1 / section1_b, ABDsec1, thicknessessec1, tsection1, Q_lamsec1,...
-    Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
-FIsec2 = safetyfact(Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_lamsec2,...
-    Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
+FIskin = safetyfact(-Fskin / (bskin*2), ABDskin, thicknessesskin, skinlayup, Q_lamskin, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
+FIsec1 = safetyfact(-Fsec1 / section1_b, ABDsec1, thicknessessec1, tsection1, Q_lamsec1, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
+FIsec2 = safetyfact(-Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_lamsec2, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
 
-Fskin / (bskin*2)
+
+EI_equiv = EIskin + EIsec1 + EIsec2;
+
+Pcr = 7.56 * pi^2 * EI_equiv / a^2;
+
+bucklingSF = Pcr / Ftot
 
 
 
@@ -136,10 +135,11 @@ function [sf] = safetyfact(F, ABD, thicknesses, layup, Q_lam, Xt, Xc, Yt, Yc, v1
     [strains_glob, strains_princ, stresses_glob, stresses_princ...
     ] = ply_strains(midplane_strain, thicknesses, layup, Q_lam);
 
-    max(stresses_princ(1,:))
     for k=1:size(stresses_princ,2)
-            sigma1 = stresses_princ(1,k); sigma2 = stresses_princ(2,k);
-            sigma3 = 0; sigma12 = stresses_princ(3,k);
+            sigma1 = stresses_princ(1,k); 
+            sigma2 = stresses_princ(2,k);
+            sigma3 = 0; 
+            sigma12 = stresses_princ(3,k);
             ff(k) = puck_ff(sigma1, sigma2, sigma3, Xt, Xc, v12, mof, E1);
             iff(k) = puck_iff(sigma2, sigma12, Yt, Yc, S);
     end
@@ -154,7 +154,7 @@ end
 
 function [EIi] = EI(t, d)
     d11 = d(1,1);
-    EIi = 12 / ( t^3 * d11) 
+    EIi = 12 / ( t^3 * d11) ;
 end
 
 % Buckling load of skin
@@ -345,8 +345,6 @@ function [failure] = puck_ff(sigma1, sigma2, sigma3, Xt, Xc, v12, mof, E1)
     Ef = 225e9;
 
     %Initialise logical representing whether its failed. 
-    failure = false;
-
     if sigma1 > 0
         R = Xt;
     else
@@ -362,7 +360,6 @@ function [failure] = puck_ff(sigma1, sigma2, sigma3, Xt, Xc, v12, mof, E1)
 end
 
 function [failure] = puck_iff(sigma2, sigma12, Yt, Yc, S)
-    failure = false;
     p12p = 0.3;
     p12n = 0.2;
 

@@ -24,18 +24,19 @@ rho = 1610;
 
 layup1 = zeros([1,200]) + 45;
 layup1(1:3) = [45, -45, 45];
-layup1(97:165) = 0;
-layup1(35:55) = 30;
-layup1(185:195) = 30;
+layup1(97:135) = 0;
+layup1(35:55) = 45;
+layup1(185:195) = 45;
 
 
 
 % layup1 = [45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45];
 thicknesses1 = thicknessesgen(layup1, t);
+t_skin = numel(thicknesses1) * t ;
 
 thickness = numel(thicknesses1) * t * 1000
 skinarea = pi*(R^2 - (R-sum(thicknesses1))^2);
-weight = skinarea * rho
+
 
 Q_lam1 = Qlam(Ex, Ey, vxy, Gxy);
 Q_array1 = Qarray(layup1, Q_lam1);
@@ -44,42 +45,40 @@ A1 = ABD1(1:3, 1:3);
 D1 = ABD1(4:6,4:6);
 
 
-b = 1;
-m = 45;
+b = 0.7;
 mof = 1.1;
-FI1 = safetyfact(-2 * M/R, ABD1, thicknesses1, layup1, Q_lam1, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
+FI1 = safetyfact(-2 * M/R, ABD1, thicknesses1, layup1, Q_lam1, Xt, Xc, Yt, Yc, vxy, mof, Ex, S);
 
-AR = linspace(0.6, 5, 30);
+AR = linspace(0.6, 7, 100);
+
 for m = 1:15
     for i = 1:numel(AR)
         ARspec = AR(i);
         a = b*ARspec;
-        N0_top(m,i) = platebucklingsscc(D1, ARspec, a, m);
+        N0_top(m,i) = platebucklingccss(D1, ARspec, a, m);
     end
-
-    % plot(AR, N0_top(m,:))
-    % hold on
-    
-
 end
 
 
 
-load = min(N0_top,[],1)
+load = min(N0_top,[],1);
 
     
 plot(AR, load)
-ylim([0,1e7])
 hold on 
 % Calculate Force through panel
 F = zeros(size(AR)) + M/R;
 plot(AR, F)
 
-buckling_load = min(N0_top,[],"all")
-
-bucklingSF = buckling_load / (M/R)
+buckling_load = min(N0_top,[],"all");
 
 
+
+
+FI1
+bucklingSF = buckling_load * b / ( M / R )
+
+weight = skinarea * rho
 
 
 
@@ -138,6 +137,27 @@ function [N0] = platebucklingsscc(D, AR, a, m)
 
     N0 = pi^2 / b^2 * sqrt(D11 * D22) * K;
 
+end
+
+function [N0] = platebucklingccss(D, AR, a, m)
+    D11 = D(1,1);
+    D12 = D(1,2);
+    D66 = D(3,3);
+    D22 = D(2,2);
+    b = a/AR;
+
+    lambda = a/b * (D22 / D11)^0.25;
+
+    if lambda < 1.662
+        K = m^2/lambda^2 + 2*(D12 + 2*D66)/(sqrt(D11*D22)) + 16/3*lambda^2/m^2;
+    else
+        k1 = (m^4 +8*m^2 + 1) / (lambda^2 * (m^2 + 1));
+        k2 = 2*(D12 + 2*D66)/(sqrt(D11*D22));
+        k3 = lambda^2 / (m^2 + 1);
+        K = k1 + k2 + k3;
+    end
+
+    N0 = pi^2 / b^2 * sqrt(D11 * D22) * K;
 end
 
 function [N0] = platebucklingssuniax(D, AR, a, m)
