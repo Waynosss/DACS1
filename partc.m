@@ -1,6 +1,6 @@
 clear 
 
-
+%% Variables
 M = 15e6;
 V = 1.5e6;
 R = 3;
@@ -20,7 +20,7 @@ rho = 1610;
 
 thick = 2.5e-3;
 
-%%Skin stiffend panel buckling Analysis
+%% Skin stiffend panel buckling Analysis
 a = 0.7;
 b_spacing = 0.8;
 AR = a/b_spacing;
@@ -113,6 +113,21 @@ EI_equiv = EIskin + EIsec1 + EIsec2;
 Pcr = 7.56 * pi^2 * EI_equiv / a^2;
 
 bucklingSF = Pcr / Ftot
+
+
+% Crippling Calc
+D66crip = ABDsec1(6,6);
+Nxcrip = 12 / D66crip / (0.5 * section1_b)^2;
+sigmacrip = Nxcrip / (0.5 * section1_b);
+
+ratio = 1.63 / (0.5 * section1_b / t_sec1)^0.717;
+
+sigmaultc = sigmacrip / ratio; 
+%Re run puck criteria with indexed compressive strength
+FIcrip = safetyfact(-Fsec1 / section1_b, ABDsec1, thicknessessec1, tsection1, Q_lamsec1, Xt, sigmaultc, Yt, Yc, vxy, mof, Ex, S)
+
+
+
 
 
 

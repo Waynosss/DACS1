@@ -22,11 +22,11 @@ rho = 1610;
 %% Skin Layups
 %%Skin layups
 
-layup1 = zeros([1,200]) + 45;
+layup1 = zeros([1,180]) + 45;
 layup1(1:3) = [45, -45, 45];
-layup1(97:135) = 0;
+layup1(97:165) = 0;
 layup1(35:55) = 45;
-layup1(185:195) = 45;
+
 
 
 
@@ -58,32 +58,25 @@ for m = 1:15
         N0_top(m,i) = platebucklingccss(D1, ARspec, a, m);
     end
 end
-
-
-
 load = min(N0_top,[],1);
-
-    
 plot(AR, load)
 hold on 
-% Calculate Force through panel
-F = zeros(size(AR)) + M/R;
+F = zeros(size(AR)) + (M/R / b);
 plot(AR, F)
+title('AR vs Critical Buckling Load')
 
 buckling_load = min(N0_top,[],"all");
 
+a = 1;
+b = 0.7;
+AR = a/b
 
-
-
+Ncrit = platebucklingccss(D1, AR, a, m) / b %N
 FI1
-bucklingSF = buckling_load * b / ( M / R )
-
+bucklingSF = Ncrit / ( M / R )   % N / N
+ 
 weight = skinarea * rho
 
-
-
-
-title('AR vs Critical Buckling Load')
 
 
 
