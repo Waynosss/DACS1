@@ -39,8 +39,6 @@ Yc = 300 #MPa
 S = 100 #MPa
 
 
-
-
 #set_angles = [45, -45, 0, 0, 45, -45, 0, 0, 45, -45, 0, 0, 30,\
               #-30, 30, 0, 0, -30, 60, -60, 0, 0, 0, 90, 90, 0, 0, 90,  0, 0]
 #set_angles = set_angles + set_angles[::-1]
@@ -119,16 +117,12 @@ def getRandomLayup():
 
         
 
-failure_strains = {} # containing (Ny, Ns) => global strain for each failure
-
-
-
 """Initialise load, clean laminate etc. for each loading ratio"""
 
 FI_maxs = []
 layups = []
 n = 1
-for i in range(1, 100000, 1):
+for i in range(1, 50000, 1):
     layup = getRandomLayup()[0]
     ABD, h = abd.getABDMatrix(layup, n)
     ABD_inv = np.linalg.inv(ABD)
@@ -138,7 +132,7 @@ for i in range(1, 100000, 1):
 
     # LOAD  
     Nx = Mz * R * h / Iz        # N / mm                 #mm
-    print(f"Nx = {Nx}")
+    #print(f"Nx = {Nx}")
     
     
     
@@ -188,67 +182,46 @@ for i in range(1, 100000, 1):
                 FI_max = Max;
     FI_maxs.append(FI_max)
 
-#failure_strains[(f"Nx: {Nx:.0f} N")] = e0
-#print(f"FI = {FI}")
 
-min_values_with_indexes = heapq.nsmallest(300, enumerate(FI_maxs), key=lambda x: x[1])
-#print(min_values_with_indexes)
-values_at_indexes = [(layups[index], FI) for index, FI in min_values_with_indexes if FI < 1]
-#print(values_at_indexes)
-# Create a dictionary to store the counts of each value
-value_counts = {}
+"""Takes the layups with lowest FI's - Note, the more iterations, the better the sample"""
+num_samples = 300 #change this to change the number of lowest layups
+ 
+index_of_smallest_FIs = heapq.nsmallest(num_samples, enumerate(FI_maxs), key=lambda x: x[1])
+index_of_smallest_FIs = sorted(index_of_smallest_FIs, key=lambda x: x[1], reverse = True)
+#print(index_of_smallest_FIs)
+layups_for_smallest_FIs_under_1 = [(layups[index], FI) for index, FI in index_of_smallest_FIs if FI < 1]
+#print(layups_for_smallest_FIs_under_1)
 
-# Iterate over each list in values_at_indexes
-for sublist in values_at_indexes:
-    # Iterate over each value in the sublist
-    print(f"FI_Max = {sublist[1]:.3f}, Layup = {sublist[0]}")
-    for value in sublist[0]:
-        # Check if the value is already in the dictionary
-        if value in value_counts:
+"""Get the count of each ply in the list of the lowest FI layups"""
+ply_counts = {}
+# Iterate over each list in layups_for_smallest_FIs_under_1
+for layup_and_FI in layups_for_smallest_FIs_under_1:
+    # Iterate over each ply in the layup_and_FI
+    print(f"FI_Max = {layup_and_FI[1]:.3f}, Layup = {layup_and_FI[0]}")
+    for ply in layup_and_FI[0]:
+        # Check if the ply is already in the dictionary
+        if ply in ply_counts:
             # If it is, increment its count by 1
-            value_counts[value] += 1
+            ply_counts[ply] += 1
         else:
             # If it's not, initialize its count to 1
-            value_counts[value] = 1
+            ply_counts[ply] = 1
 
-# Extract values and counts from the dictionary
-values = list(value_counts.keys())
-counts = list(value_counts.values())
+# Extract plys and counts from the dictionary
+plys = list(ply_counts.keys())
+counts = list(ply_counts.values())
 
 # Create a dot plot
 plt.figure(figsize=(8, 6))
-plt.scatter(values, counts, color='blue')
+plt.scatter(plys, counts, color='blue')
 plt.xlabel('Angle of ply')
 plt.ylabel('Count')
 plt.title('Freq of angle present in lowest FI layups for tensile Max')
 plt.grid(True)
-plt.xticks(values)
+plt.xticks(plys)
 plt.ylim(ymin=0)#, ymax=150)  # Adjust the limits for the y axis
 plt.show()
 
-
-
-for failure_strain in failure_strains:
-    e = failure_strains[failure_strain]
-    ex = e[0][0]; ey = e[1][0]; exy = e[2][0]
-    print(f"Failure Point Max.: {failure_strain} - Global Strain (10^(-6)m): εx = {ex:.2f}, εy = {ey:.2f}, εxy = {exy:.2f}")
-print("-------------")
-
-"""
-Ny_puck_fpfs, Ns_puck_fpfs, Ny_puck_lpfs, Ns_puck_lpfs = puck.main()
-
-plt.figure()
-plt.title("Biaxial failure envelope for Ny-Ns loading utlising Max. and Puck")
-plt.ylabel('Ns (N)')
-plt.xlabel('Ny (N)')
-plt.plot(Ny_fpfs, Ns_fpfs, label="Max FPF", color="b") #fpf max
-plt.plot(Ny_lpfs, Ns_lpfs, label="Max LPF", color="m") #lpf max
-plt.plot(Ny_puck_fpfs, Ns_puck_fpfs, label="Puck FPF", color="g") #fpf Puck
-plt.plot(Ny_puck_lpfs, Ns_puck_lpfs, label="Puck LPF", color="c") #lpf Puck
-plt.legend()
-plt.show()"""
-
-#print(f"Global Failure Strains: {failure_strains}")
 
 
 
