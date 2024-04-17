@@ -15,26 +15,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import heapq
 import random
+import Material_Constants as cons
 
-E1 = 140
-E2 = 11.2    #degrade
-G12 = 5  #degrade
-
-v12 = 0.3
-
-v21 = v12 * E2/E1  #0.214
-
-t = 0.135 #change this to an array of thicknesses
-#h = 5
-
-#Need strength
-Xt = 2200 # MPa
-Xc = 1800 #MPa
-Yt = 78 #MPa
-Yc = 300 #MPa
-S = 100 #MPa
-
-R = 3000
+E1, E2, G12, v12, t, Xt, Xc, Yt, Yc, S, v21, Q_basic = cons.main() #Get material values
 
 
 #set_angles = [0, 90, 45, -45, -45, 45, 90, 0, 0, 90, 45, -45, -45, 45, 90, 0]
@@ -47,18 +30,8 @@ Ny = 0; Ns = 0; Mx = 0; My = 0; Ms = 0;
 Mz = 15 * 10**6 # MN
 
 
+R = 3000
 
-
-#thicknesses = [t] * len(angles)
-
-
-Q_ = 1-v12*v21
-Q11 = E1 / Q_
-Q22 = E2 / Q_
-Q12 = v12*E2 / Q_  
-Q66 = G12      
-
-Q_basic = [[Q11, Q12, 0], [Q12, Q22, 0],[0, 0, Q66]]
 
 def m_(deg):
     return math.cos(np.deg2rad(deg))
@@ -141,6 +114,12 @@ def getBucklingLoadCCSS(D, m, a, b): #b is width, a is length
     elif (lamb >= 1.662):
         K = ((m**4+8*m**2+1)/(lamb**2*(m**2+1)))+((2*(D12+2*D66))/(np.sqrt(D11*D22)))+((lamb**2)/(m**2+1))
     return (np.pi**2/(b**2))*np.sqrt(D11*D22)*K
+
+def getBucklingLoadSSSS(D, m, a, b):
+    D11 = D[0][0]; D12 = D[0][1]; D66 = D[2][2]; D22 = D[1][1];
+    #D11 = 659.7; D12 = 466.9; D22 = 659.7; D66 = 494;
+    AR = a/b;
+    return np.pi**2 * (D11*m**4 + 2*(D12+2*D66)*m**2*AR**2 + D22*AR**4 ) / (a**2 * m**2)
     
 """ABD Matrix Function"""
 def getABDMatrix(layup, symmetry):
@@ -196,6 +175,9 @@ def shuffleLayup():
     randomOrder = random.shuffle(layup_ratio)
     return layup_ratio
 
+def returnMainLayup():
+    return [45, -45, 45, -45, 45, -45, 30, -30, 30, -30, 45, -45, 30, -30, 30, -30, 45, -45, 60, -60, 60, -60, 15, -15,  0, 90, 0, 90,45, -45, 90, 0]
+
 def main():
     safe_ns = []
     base_layups = []
@@ -208,32 +190,45 @@ def main():
         #layup = [getRandomPly()]
         """Start loop for getting the n at which it doesn't buckle"""
         #base_layup = shuffleLayup()
-        base_layup = [45, -45, 45, -45, 30, -30, 60, -60, 45, -45, 45, -45, 0, 90, 30, -30, 60, -60, 45, -45, 30, -30, 30, -30, 0, 90]
-        base_layup = [45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 30, -30, 30, -30, 30, -30, 30, -30, 60, -60, 60, -60, 0, 90, 90, 0]
+        #base_layup = [45, -45, 45, -45, 45, -45, 30, -30, 60, -60, 45, -45, 45, -45, 0, 90, 30, -30, 60, -60, 45, -45, 30, -30, 30, -30, 0, 90]
+        base_layup = [45, -45, 45, -45, 45, -45, 30, -30, 30, -30, 45, -45, 30, -30, 30, -30, 45, -45, 60, -60, 60, -60, 15, -15,  0, 90, 0, 90,45, -45, 90, 0]
+        #base_layup = [45, -45, 90, 0]
         base_layups.append(base_layup)
         this_failed = True;
         n_ = 1
         while this_failed:
             """Make ABD Matrix"""
             D, ABD, h = getABDMatrix(base_layup, n_)
+            
+            d = np.linalg.inv(D)
+            E1b = 12 / (h**3 * d[0][0])
+            #print(f"E1b = {E1b}")
             #print(h)                                                        #mm
     
             a = 500
-            b = 300 # can change these values around to see differences
+            b = 450 # can change these values around to see differences
             #k = 0
             #n = 2
             m = 1
             
+            
             Iz = np.pi*(R**4 - (R-h)**4)/4
+            print(f"Iz = {Iz}")
             actualStress = Mz * R / Iz  # N/(mm^2)
+            
+            print(f"Stress from moment = {actualStress}")
 
             
             '''If you want those old comments, insert them here'''
             
             
-            bucklingStress = getBucklingLoadCCSS(D, m, a, b) / (h)  # N/mm / mm = N / (mm^2)
+            bucklingStress = getBucklingLoadCCSS(D, m, a, b) / h  # N/mm / mm = N / (mm^2)
             
-            if bucklingStress > (2 * (actualStress)): #2x for factor of safety
+            print(f'Buckling Stress = {bucklingStress}')
+            print(f'Buckling Load = {bucklingStress * h}')
+            if bucklingStress > (1.5 * (actualStress)): #2x for factor of safety
+            
+                FOS = bucklingStress / actualStress
                 this_failed = False;
                 #len(layup)
                 #safe_ns.append(len(layup))
@@ -246,20 +241,21 @@ def main():
 
     min_n = np.min(safe_ns)
     min_weight_layups_w_load = [[base_layup, buckStress] for base_layup, n__, buckStress in zip(base_layups, safe_ns, bucklingStresses) if n__ == min_n]
-    print(min_weight_layups_w_load)
+    #print(min_weight_layups_w_load)
     #print(values_at_indexes)
     ordered_lightest_layups = sorted(min_weight_layups_w_load, key=lambda x: x[1])
     print(ordered_lightest_layups)
     print(f"Min N = {min_n}")
     print(f"num mins = {len(ordered_lightest_layups)}")
-    numPlys = len(ordered_lightest_layups[-1][0])*2
+    numPlys = len(ordered_lightest_layups[-1][0])*2*min_n
     thicknessLaminate = numPlys * t
-    weight = thicknessLaminate / 1000 * 0.3 * 0.5 * 1610
+    weight = thicknessLaminate / 1000 * b/1000 * a/1000 * 1610
     print(f"Num plys = {numPlys}")
+    print(f"FOS = {FOS}")
     print(f"Thickness = {thicknessLaminate} mm")
     print(f"Weight = {weight} kg")
     thicknessAluminium = 7 #mm
-    weightOfAluminium = thicknessAluminium / 1000 * 0.3 * 0.5 * 2770
+    weightOfAluminium = thicknessAluminium / 1000 * b/1000 * a/1000 * 2770
     print(f"Weight of Al = {weightOfAluminium} kg")
     
     #print(f"Num low weights = {np.size(ordered_lightest_layups)}")
@@ -302,115 +298,10 @@ def main():
     plt.xticks(values)
     plt.show()
     
-    
-    '''
-    """set arrays"""
-    ns = []
-    bucklingStresses = []
-    safe_ns = []
-    """Set initial variables"""
-    delta = 45
-    """How about we say for different deltas, at what n does it fail?"""
-    deltas = np.linspace(0,90, 90)'''
-    '''for delta in deltas:
-        
-        """Initial constants"""
-        this_failed = True;
-        n_ = 1
-        
-        
-        """Start loop for getting the n at which it doesn't buckle"""
-        while this_failed:
-            """Make ABD Matrix"""
-            D, ABD, h = getABDMatrix(delta, n_)
-    
-            a = 0.25
-            b = 0.3 # can change these values around to see differences
-            k = 0
-            n = 1
-            m = 1
-            bucklingLoad = getBucklingLoad(D, m, n, a, b, k)
-            if bucklingLoad > (2 * Nx): #2x for factor of safety
-                this_failed = False;
-                safe_ns.append(n_)
-            #print(f"n = {n_}")
-            n_ += 1
-                
-
-    plt.figure()
-    plt.title(f"For laminate [0, 90, delta, -delta]ns")
-    plt.ylabel('safe n')
-    plt.xlabel('delta')
-    plt.scatter(deltas, safe_ns)
-    plt.show()'''
     return 
 
-
-    '''
-    """Start loop for getting the n at which it doesn't buckle"""
-    while this_failed:
-        """Make ABD Matrix"""
-        D, ABD, h = getABDMatrix(delta, n_)
-
-        a = 0.3
-        b = 0.4
-        k = 0
-        n = 1
-        m = 1
-        bucklingLoad = getBucklingLoad(D, m, n, a, b, k)
-        print(f"bucklingLoad = {bucklingLoad}")
-        ns.append(n_)
-        bucklingStresses.append(bucklingLoad)
-        if bucklingLoad > (2 * Nx): #2x for factor of safety
-            this_failed = False;
-            safe_ns.append(n_)
-        print(f"n = {n_}")
-        n_ += 1
-            
-    plt.figure()
-    plt.title(f"For laminate [0, 90, {delta}, -{delta}]ns")
-    plt.ylabel('n_symmetrys')
-    plt.xlabel('Buckling Load')
-    plt.scatter(ns, bucklingStresses)
-    plt.show()
-    return
-'''
-
-
-"""Uncomment the below if you want to run only this file (only Puck)"""
 main() 
 
-
-'''New idea............
-Make a program that says for random values between 0 and 90, or out of 0, 15, 30, 45, 60, 75, 90 all negative too:::::
-    make a laminate of random values from that list ina  random order, symtrise it, find n such that it doesnt fail and take the weight
-    Try to constrain it by having it do a minimum of 4 and maximum 12 lamina per n, and maybe start n count from 5?'''
-    
-
-
-'''
-for b in bs:
-    bucklingLoad_ms = []
-    for m in ms:
-        bucklingLoad_m = getBucklingLoadCCSS(D, m, a, b)
-        bucklingLoad_ms.append((bucklingLoad_m, m))
-        #print(f"bucklingLoad_m = {(bucklingLoad_m, m)}")
-    bucklingLoad_b = min(bucklingLoad_ms, key=lambda x: x[0])
-    bucklingLoad_bs.append((bucklingLoad_b[0], b, bucklingLoad_b[1]))
-    print(f"bucklingLoad_b = {(bucklingLoad_b, b)}")
-bucklingLoad_m_b = min(bucklingLoad_bs, key=lambda x: x[0])
-print(f"bucklingLoad_m_b  = {bucklingLoad_m_b}")
-bucklingLoad = bucklingLoad_m_b[0]
-print(bucklingLoad)
-#print(f"bucklingLoad_m_b = {bucklingLoad_m_b}")'''
-'''bucklingLoad_ms = []
-for m in ms:
-    bucklingLoad_m = getBucklingLoadCCSS(D, m, a, b)
-    bucklingLoad_ms.append((bucklingLoad_m, m))
-    print(f"bucklingLoad_m = {(bucklingLoad_m, m)}")
-bucklingLoad = min(bucklingLoad_ms, key=lambda x: x[0])
-print(bucklingLoad)
-bucklingLoad = bucklingLoad[0]'''
 
 
 
