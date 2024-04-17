@@ -22,7 +22,7 @@ thick = 2.5e-3;
 
 %% Skin stiffend panel buckling Analysis
 a = 0.5;
-b_spacing = 1;
+b_spacing = 1.5;
 AR = a/b_spacing;
 
 l1 = [45, -45, 45, -45, 45, -45, 45, -45, 45, -45];
@@ -53,11 +53,11 @@ section2_b = 110e-3;
 
 %Thickness Generation
 thicknessesskin= thicknessesgen(skinlayup, t);
-t_skin = sum(thicknessesskin);
+t_skin = sum(thicknessesskin)
 thicknessessec1= thicknessesgen(tsection1, t);
-t_sec1= sum(thicknessessec1);
+t_sec1= sum(thicknessessec1)
 thicknessessec2= thicknessesgen(tsection2, t);
-t_sec2 = sum(thicknessessec2);
+t_sec2 = sum(thicknessessec2)
 
 % Total Force
 sf = 2;
