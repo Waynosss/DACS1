@@ -22,28 +22,32 @@ thick = 2.5e-3;
 
 %% Skin stiffend panel buckling Analysis
 a = 0.5;
-b_spacing = 1.5;
+b_spacing = 1;
 AR = a/b_spacing;
 
-skinlayup = [45, -45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ...
-    0, 0,0, 0, 0, 45, -45,-45, 45, -45,45, ...
-    -45, 45, -45, 45, -45, 45, -4-45, 45, 45];
+l1 = [45, -45, 45, -45, 45, -45, 45, -45, 45, -45];
+l2 = [30, -30, 30, -30, 30, -45];
+l3 = [60, -60];
+l4 = [0, 90, 0, 90, 0, 90, 0, 90];
+l5 = [l1, l2, l3, l4];
+l6 = flip(l5, 2);
+skinlayup = [l5, l6];
 
-tsection1 = [45, -45, 45, -45, 0, 0, 0, 0, 90, 0, 0, 0, 0, -45, 45, -45, 45];
-tsection1 = [tsection1, tsection1, tsection1];
-tsection1 = [tsection1, tsection1, tsection1];
-tsection1 = [tsection1, tsection1, tsection1];
-tsection1 = [45, -45, 45, -45, 45, -45, 45, -45, 0, 45, -45, 0, 0, tsection1];
+t11 = [45, -45, 45, -45, 45, -45];
+t12 = [60, -60,  30, -30];
+t13 = [0, 90, 0, 90, 0, 90];
+t14 = [t11, t12, t13];
+t15 = flip(t14);
+tsection1 = [t14, t15];
 
+t21 = [45, -45, 45, -45];
+t22 = [60, -60];
+t23 = [0, 90, 0, 90, 0, 90];
+t24 = [t21, t22, t23];
+t25 = flip(t24);
+tsection2 = [t24, t25];
 
-tsection2 = [-45, -45, 45, 45, -45, -45, 45, 45, -45, -45, 45, 45, -45, -45, 45, 45,...
-    -45, -45, 45, 45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0 0, 0,...
-     0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, ...
-     45, 45, -45, -45, 45, 45, 45, -45, 90, 0, 90, -45, 45];
-
-section1_b = 60e-3;
+section1_b = 80e-3;
 section2_b = 110e-3;
 
 
@@ -57,7 +61,7 @@ t_sec2 = sum(thicknessessec2);
 
 % Total Force
 sf = 2;
-F_equiv = M * R * t_skin / (pi/4 * (R^4 - (R - t_skin)^4)); 
+F_equiv = M * R * t_skin / (pi/4 * (R^4 - (R - t_skin)^4))
 Ftot = F_equiv * sf;
 
 
@@ -71,11 +75,11 @@ Dskin = ABDskin(4:6,4:6);
 m=4;
 Pcr = platebucklingccss(Dskin, AR, a, m);
 
-skin_bicklingSF = Ftot / Pcr
+skin_bucklingSF = Pcr / F_equiv
 
 
 bskin = a / 2*(1+2 * (a+Askin(2,1)/Askin(1,1)) * (1 - Pcr/Ftot) * ...
-    (Askin(1,1)/(Askin(1,1)+3*Askin(2,2))));
+    (Askin(1,1)/(Askin(1,1)+3*Askin(2,2))))
 EA_axialskin = EA(t_skin, Askin, bskin);
 
 abdskin = ABDskin^-1;
@@ -100,7 +104,6 @@ abdsec2 = ABDsec2^-1 ;
 EIsec2 = EI(t_sec2, abdsec2(4:6, 4:6));
 
 %Force Distributions 
-
 Fskin = Ftot * EA_axialskin / (EA_sec1 + EA_sec2);
 Fsec1 = Ftot * EA_sec1 / (EA_axialskin + EA_sec2);
 Fsec2 = Ftot * EA_sec2 / (EA_axialskin + EA_sec1);
@@ -115,9 +118,9 @@ FIsec2 = safetyfact(-Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_
 
 EI_equiv = EIskin + EIsec1 + EIsec2;
 
-Pcr = 7.56 * pi^2 * EI_equiv / a^2;
+Pcrstiff = 7.56 * pi^2 * EI_equiv / a^2;
 
-bucklingSF = Pcr / Ftot
+bucklingSF = Pcrstiff / Ftot
 
 
 % Crippling Calc
@@ -139,8 +142,6 @@ stiffarea = section1_b * t_sec1 + section2_b * t_sec2;
 nstiff = 8;
 totarea = skinarea + nstiff*stiffarea;
 weight = totarea * rho
-
-
 
 
 
