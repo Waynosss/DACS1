@@ -76,7 +76,7 @@ end
 load = min(N0_top,[],1);
 plot(AR, load)
 hold on 
-F = zeros(size(AR)) + F_equiv;
+F = zeros(size(AR)) - F_equiv;
 plot(AR, F)
 title('AR vs Critical Buckling Load')
 
@@ -86,10 +86,10 @@ a = 0.5;
 b = 0.8;
 AR = a/b;
 
-Ncrit = platebucklingccss(D1, AR, a, m); % N/m
+Ncrit = platebucklingccss(D1, AR, a, m) % N/m
 FI1
 
-bucklingSF =   Ncrit / F_equiv   % N/m / N/m
+bucklingSF =   abs(Ncrit / F_equiv)   % N/m / N/m
  
 weight = skinarea * rho
 

@@ -1,5 +1,5 @@
-clear
-close
+clear 
+
 %% Variables
 M = 15e6;
 V = 1.5e6;
@@ -18,85 +18,100 @@ S = 100e6;
 t = 0.135e-3;
 rho = 1610;
 
+thick = 2.5e-3;
 
-%% Skin Layups
-%%Skin layups
+%% Skin stiffend panel buckling Analysis
+a = 0.7;
+b_spacing = 0.8;
+AR = a/b_spacing;
 
-% layup1 = zeros([1,180]) + 45;
-% layup1(1:3) = [45, -45, 45];
-% layup1(97:165) = 0;
-% layup1(35:55) = 45;
+skinlayup = [45, -45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ...
+    0, 0,0, 0, 0, 45, -45,-45, 45, -45,45, ...
+    -45, 45, -45, 45, -45, 45, -4-45, 45, 45];
 
-l1 = [45, -45, 45, -45, 45, -45, 45, -45, 45, -45];
-l2 = [30, -30, 30, -30, 30, -30, 30, -30];
-l3 = [60, -60, 60, -60];
-l4 = [0, 90, 90, 0];
-l5 = [l1, l2, l3, l4];
-l6 = flip(l5, 2);
-layup1 = [l5, l6];
-
-
-
-
-% layup1 = [45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45,45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45];
-thicknesses1 = thicknessesgen(layup1, t);
-t_skin = numel(thicknesses1) * t ;
-
-thicknessm = numel(thicknesses1) * t * 1000;
-skinarea = pi*(R^2 - (R-sum(thicknesses1))^2);
+tsection1 = [45, -45, 45, -45, 0, 0, 0, 0, 90, 0, 0, 0, 0, -45, 45, -45, 45];
+tsection1 = [tsection1, tsection1, tsection1];
+tsection1 = [tsection1, tsection1, tsection1];
+tsection1 = [tsection1, tsection1, tsection1];
+tsection1 = [45, -45, 45, -45, 45, -45, 45, -45, 0, 45, -45, 0, 0, tsection1];
 
 
-Q_lam1 = Qlam(Ex, Ey, vxy, Gxy);
-Q_array1 = Qarray(layup1, Q_lam1);
-ABD1 = ABD_matrix(layup1, thicknesses1, Q_array1);
-A1 = ABD1(1:3, 1:3);
-D1 = ABD1(4:6,4:6);
+tsection2 = [-45, -45, 45, 45, -45, -45, 45, 45, -45, -45, 45, 45, -45, -45, 45, 45,...
+    -45, -45, 45, 45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0 0, 0,...
+     0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, ...
+     45, 45, -45, -45, 45, 45, 45, -45, 90, 0, 90, -45, 45];
+
+section1_b = 60e-3;
+section2_b = 110e-3;
 
 
-b = 0.7;
+%Thickness Generation
+thicknessesskin= thicknessesgen(skinlayup, t);
+t_skin = sum(thicknessesskin);
+thicknessessec1= thicknessesgen(tsection1, t);
+t_sec1= sum(thicknessessec1);
+thicknessessec2= thicknessesgen(tsection2, t);
+t_sec2 = sum(thicknessessec2);
+
+
+%Skin
+Q_lamskin = Qlam(Ex, Ey, vxy, Gxy);
+Q_arrayskin = Qarray(skinlayup, Q_lamskin);
+ABDskin = ABD_matrix(skinlayup, thicknessesskin, Q_arrayskin);
+Askin = ABDskin(1:3,1:3);
+Dskin = ABDskin(4:6,4:6);
+
+m=4;
+Pcr = platebucklingssuniax(Dskin, AR, a, m);
+Px = M/R;
+
+bskin = a / 2*(1+2 * (a+Askin(2,1)/Askin(1,1)) * (1 - Pcr/Px) * ...
+    (Askin(1,1)/(Askin(1,1)+3*Askin(2,2))));
+EA_axialskin = EA(t_skin, Askin, bskin);
+
+%Section 1 : adjacent to skin
+Q_lamsec1 = Qlam(Ex, Ey, vxy, Gxy);
+Q_arraysec1 = Qarray(tsection1, Q_lamsec1);
+ABDsec1 = ABD_matrix(tsection1, thicknessessec1, Q_arraysec1);
+EA_sec1 = EA(t_sec1, ABDsec1(1:3,1:3), section1_b);
+
+%Section 2 : vertical to skin
+Q_lamsec2 = Qlam(Ex, Ey, vxy, Gxy);
+Q_arraysec2 = Qarray(tsection2, Q_lamsec2);
+ABDsec2 = ABD_matrix(tsection2, thicknessessec2, Q_arraysec2);
+EA_sec2 = EA(t_sec2, ABDsec2(1:3,1:3), section2_b);
+
+
+%Force Distributions 
+sf = 2;
+F_equiv = M * R * t_skin / (pi/4 * (R^4 - (R - t_skin)^4)); 
+Ftot = F_equiv * sf;
+
+Fskin = Ftot * EA_axialskin / (EA_sec1 + EA_sec2);
+Fsec1 = Ftot * EA_sec1 / (EA_axialskin + EA_sec2);
+Fsec2 = Ftot * EA_sec2 / (EA_axialskin + EA_sec1);
+
+%Puck failure checking
 mof = 1.1;
 
-I_z = pi/4 * (R^4 - (R - t_skin)^4);
-stress_bottom = -M * R / I_z;
+FIskin = safetyfact(-Fskin / (bskin*2), ABDskin, thicknessesskin, skinlayup, Q_lamskin, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
+FIsec1 = safetyfact(-Fsec1 / section1_b, ABDsec1, thicknessessec1, tsection1, Q_lamsec1, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
+FIsec2 = safetyfact(-Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_lamsec2, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
 
-F_equiv = stress_bottom * t_skin;
 
-FI1 = safetyfact(2 * F_equiv, ABD1, thicknesses1, layup1, Q_lam1, Xt,...
-    Xc, Yt, Yc, vxy, mof, Ex, S);
+% Mass Calc
 
-AR = linspace(0.6, 7, 100);
-
-for m = 1:15
-    for i = 1:numel(AR)
-        ARspec = AR(i);
-        a = b*ARspec;
-        N0_top(m,i) = platebucklingccss(D1, ARspec, a, m);
-    end
-end
-load = min(N0_top,[],1);
-plot(AR, load)
-hold on 
-F = zeros(size(AR)) + F_equiv;
-plot(AR, F)
-title('AR vs Critical Buckling Load')
-
-buckling_load = min(N0_top,[],"all");
-
-a = 0.5;
-b = 0.8;
-AR = a/b;
-
-Ncrit = platebucklingccss(D1, AR, a, m); % N/m
-FI1
-
-bucklingSF =   abs(Ncrit / F_equiv)   % N/m / N/m
- 
-weight = skinarea * rho
+skinarea = pi*(R^2 - (R-t_skin)^2);
+stiffarea = section1_b * t_sec1 + section2_b * t_sec2;
+nstiff = 8;
+totarea = skinarea + nstiff*stiffarea;
+weight = totarea * rho
 
 
 
 
-%% Functions
 
 function [sf] = safetyfact(F, ABD, thicknesses, layup, Q_lam, Xt, Xc, Yt, Yc, v12, mof, E1, S)
     load = [F;0;0;0;0;0];
@@ -105,10 +120,11 @@ function [sf] = safetyfact(F, ABD, thicknesses, layup, Q_lam, Xt, Xc, Yt, Yc, v1
     [strains_glob, strains_princ, stresses_glob, stresses_princ...
     ] = ply_strains(midplane_strain, thicknesses, layup, Q_lam);
 
-
     for k=1:size(stresses_princ,2)
-            sigma1 = stresses_princ(1,k); sigma2 = stresses_princ(2,k);
-            sigma3 = 0; sigma12 = stresses_princ(3,k);
+            sigma1 = stresses_princ(1,k); 
+            sigma2 = stresses_princ(2,k);
+            sigma3 = 0; 
+            sigma12 = stresses_princ(3,k);
             ff(k) = puck_ff(sigma1, sigma2, sigma3, Xt, Xc, v12, mof, E1);
             iff(k) = puck_iff(sigma2, sigma12, Yt, Yc, S);
     end
@@ -117,6 +133,16 @@ function [sf] = safetyfact(F, ABD, thicknesses, layup, Q_lam, Xt, Xc, Yt, Yc, v1
 
 end
 
+function [EAi] = EA(t, A, b)
+    EAi = 1/t * (A(1,1) - A(2,1)^2 / A(2,2)) * b * t;
+end
+
+function [EIi] = EI(t, d)
+    d11 = d(1,1);
+    EIi = 12 / ( t^3 * d11) ;
+end
+
+% Buckling load of skin
 function [sigmacr] = sigmacrit(E, v, r, t)
     sigmacr = E / sqrt(3*(1-v^2)) * t / r;
 end
@@ -133,42 +159,6 @@ function [M0] = platebucklingmoment
     
 end
 
-function [N0] = platebucklingsscc(D, AR, a, m)
-    D11 = D(1,1);
-    D12 = D(1,2);
-    D66 = D(3,3);
-    D22 = D(2,2);
-
-    b = a/AR;
-    
-    lambda = a/b * (D22 / D11)^0.25;
-    K = m^2/lambda^2 + 2*(D12 + 2*D66)/(sqrt(D11*D22)) + 16/3*lambda^2/m^2;
-
-    N0 = pi^2 / b^2 * sqrt(D11 * D22) * K;
-
-end
-
-function [N0] = platebucklingccss(D, AR, a, m)
-    D11 = D(1,1);
-    D12 = D(1,2);
-    D66 = D(3,3);
-    D22 = D(2,2);
-    b = a/AR;
-
-    lambda = a/b * (D22 / D11)^0.25;
-
-    if lambda < 1.662
-        K = m^2/lambda^2 + 2*(D12 + 2*D66)/(sqrt(D11*D22)) + 16/3*lambda^2/m^2;
-    else
-        k1 = (m^4 +8*m^2 + 1) / (lambda^2 * (m^2 + 1));
-        k2 = 2*(D12 + 2*D66)/(sqrt(D11*D22));
-        k3 = lambda^2 / (m^2 + 1);
-        K = k1 + k2 + k3;
-    end
-
-    N0 = pi^2 / b^2 * sqrt(D11 * D22) * K;
-end
-
 function [N0] = platebucklingssuniax(D, AR, a, m)
     D11 = D(1,1);
     D12 = D(1,2);
@@ -180,8 +170,6 @@ function [N0] = platebucklingssuniax(D, AR, a, m)
     
     N0 = num / denom;
 end
-
-
 
 function [thick] = thicknessesgen(layup, t)
     thick = zeros(1,numel(layup));
@@ -334,6 +322,7 @@ function [strains_glob, strains_princ, stresses_glob, stresses_princ...
     end
   
 end
+
 function [failure] = puck_ff(sigma1, sigma2, sigma3, Xt, Xc, v12, mof, E1)
     
     % Assume fibre poisson is 0.2, E_f = 225
@@ -341,8 +330,6 @@ function [failure] = puck_ff(sigma1, sigma2, sigma3, Xt, Xc, v12, mof, E1)
     Ef = 225e9;
 
     %Initialise logical representing whether its failed. 
-    failure = false;
-
     if sigma1 > 0
         R = Xt;
     else
@@ -358,7 +345,6 @@ function [failure] = puck_ff(sigma1, sigma2, sigma3, Xt, Xc, v12, mof, E1)
 end
 
 function [failure] = puck_iff(sigma2, sigma12, Yt, Yc, S)
-    failure = false;
     p12p = 0.3;
     p12n = 0.2;
 

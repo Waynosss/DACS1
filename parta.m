@@ -18,13 +18,14 @@ S = 230e6;
 
 rho = 2770;
 
-thick = 7e-3;
+thick = 7.6e-3;
 
-%%Calcs
-%%Aluminium
+%% Calcs
 bucklingcritmoment = sigmacrit(Ex, vxy, R, thick) * pi * R^2 * thick 
+buckling_SF = bucklingcritmoment / M
+
 max_bending_aly = M*R / (pi/4 * (R^4 - (R-thick)^4)) ;
-max_shear_aly = 2*V / (pi * (R^2 - (R-thick)^2));
+max_shear_aly = 2*V / (pi * (R^2 - (R-thick)^2)^2);
 
 sfbend = min(Xt, Xc) / max_bending_aly
 sfshear = S / max_shear_aly

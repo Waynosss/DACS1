@@ -1,0 +1,74 @@
+%% Radius and Densitys
+R = 3;
+
+rho_aly = 2770;
+rho_cf = 1610;
+
+%% Part A
+
+m_a = 365; %kg/m
+
+
+%% Part B
+t_b_top = 0.0015; 
+t_b_side = 0.004;
+t_b_bot = 0.007; %m
+
+theta_top = 60;
+theta_bottom = 130;
+theta_sides = 360  - theta_top - theta_bottom;
+
+m_top = mskinsect(R, theta_top, t_b_top, rho_cf);
+m_side = mskinsect(R, theta_sides, t_b_side, rho_cf);
+m_bot = mskinsect(R, theta_bottom, t_b_bot, rho_cf);
+
+
+m_b = m_bot + m_top + m_side
+
+
+
+%% Part C
+
+num_stringer_1 = 4;
+num_stringer_2 = 2;
+num_stringer_3 = 4;
+
+a_stringer_1 = 4;
+a_stringer_2 = 2;
+a_stringer_3 = 4;
+
+m_stringers = num_stringer_1 * a_stringer_1 + num_stringer_2 * a_stringer_2 ...
+     + num_stringer_3 * a_stringer_3;
+
+
+skin_t_1 = 0.003;
+skin_t_2 = 0.002;
+skin_t_3 = 0.005;
+
+theta1 = 90;
+theta2 = 50;
+theta3 = 360 - theta1 - theta2;
+
+mskin1 = mskinsect(R, theta1, skin_t_1, rho_cf);
+mskin2 = mskinsect(R, theta2, skin_t_2, rho_cf);
+mskin3 = mskinsect(R, theta3, skin_t_3, rho_cf);
+
+m_c = mskin1 + mskin2 + mskin3 + m_stringers
+
+
+
+%% Comparison
+pab = percdiff(m_b, m_a)
+pac = percdiff(m_c, m_a)
+pbc = percdiff(m_c, m_b)
+
+%% Function
+function [p] = percdiff(m1, m2)
+    p = abs(m1 - m2) / ((m1 + m2) / 2) * 100;
+end
+
+function [m] = mskinsect(R, theta, t, rho)
+    A = (theta/360)*(pi * (R^2 - (R-t)^2));
+    m = A * rho;
+
+end

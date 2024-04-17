@@ -21,13 +21,9 @@ rho = 1610;
 thick = 2.5e-3;
 
 %% Skin stiffend panel buckling Analysis
-a = 0.7;
-b_spacing = 0.8;
+a = 0.5;
+b_spacing = 1.5;
 AR = a/b_spacing;
-
-
-
-
 
 skinlayup = [45, -45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
@@ -59,6 +55,11 @@ t_sec1= sum(thicknessessec1);
 thicknessessec2= thicknessesgen(tsection2, t);
 t_sec2 = sum(thicknessessec2);
 
+% Total Force
+sf = 2;
+F_equiv = M * R * t_skin / (pi/4 * (R^4 - (R - t_skin)^4)); 
+Ftot = F_equiv * sf;
+
 
 %Skin
 Q_lamskin = Qlam(Ex, Ey, vxy, Gxy);
@@ -68,10 +69,12 @@ Askin = ABDskin(1:3,1:3);
 Dskin = ABDskin(4:6,4:6);
 
 m=4;
-Pcr = platebucklingssuniax(Dskin, AR, a, m);
-Px = M/R;
+Pcr = platebucklingccss(Dskin, AR, a, m);
 
-bskin = a / 2*(1+2 * (a+Askin(2,1)/Askin(1,1)) * (1 - Pcr/Px) * ...
+skin_bicklingSF = Ftot / Pcr
+
+
+bskin = a / 2*(1+2 * (a+Askin(2,1)/Askin(1,1)) * (1 - Pcr/Ftot) * ...
     (Askin(1,1)/(Askin(1,1)+3*Askin(2,2))));
 EA_axialskin = EA(t_skin, Askin, bskin);
 
@@ -97,9 +100,6 @@ abdsec2 = ABDsec2^-1 ;
 EIsec2 = EI(t_sec2, abdsec2(4:6, 4:6));
 
 %Force Distributions 
-sf = 2;
-F_equiv = M * R * t_skin / (pi/4 * (R^4 - (R - t_skin)^4)); 
-Ftot = F_equiv * sf;
 
 Fskin = Ftot * EA_axialskin / (EA_sec1 + EA_sec2);
 Fsec1 = Ftot * EA_sec1 / (EA_axialskin + EA_sec2);
@@ -130,10 +130,6 @@ ratio = 1.63 / (0.5 * section1_b / t_sec1)^0.717;
 sigmaultc = sigmacrip / ratio; 
 %Re run puck criteria with indexed compressive strength
 FIcrip = safetyfact(-Fsec1 / section1_b, ABDsec1, thicknessessec1, tsection1, Q_lamsec1, Xt, sigmaultc, Yt, Yc, vxy, mof, Ex, S)
-
-
-
-
 
 
 % Mass Calc
@@ -192,6 +188,27 @@ function [M0] = platebucklingmoment
 
     M0 = pi^2 * sqrt(D11*D22) * K / b^2;
     
+end
+
+function [N0] = platebucklingccss(D, AR, a, m)
+    D11 = D(1,1);
+    D12 = D(1,2);
+    D66 = D(3,3);
+    D22 = D(2,2);
+    b = a/AR;
+
+    lambda = a/b * (D22 / D11)^0.25;
+
+    if lambda < 1.662
+        K = m^2/lambda^2 + 2*(D12 + 2*D66)/(sqrt(D11*D22)) + 16/3*lambda^2/m^2;
+    else
+        k1 = (m^4 +8*m^2 + 1) / (lambda^2 * (m^2 + 1));
+        k2 = 2*(D12 + 2*D66)/(sqrt(D11*D22));
+        k3 = lambda^2 / (m^2 + 1);
+        K = k1 + k2 + k3;
+    end
+
+    N0 = pi^2 / b^2 * sqrt(D11 * D22) * K;
 end
 
 function [N0] = platebucklingssuniax(D, AR, a, m)
