@@ -26,7 +26,7 @@ b_spacing = 1.5;
 AR = a/b_spacing;
 
 l1 = [45, -45, 45, -45, 45, -45, 45, -45, 45, -45];
-l2 = [30, -30, 30, -30, 30, -45];
+l2 = [30, -30, 30, -30, 30,];
 l3 = [60, -60];
 l4 = [0, 90, 0, 90, 0, 90, 0, 90];
 l5 = [l1, l2, l3, l4];
@@ -61,7 +61,9 @@ t_sec2 = sum(thicknessessec2)
 
 % Total Force
 sf = 2;
-F_equiv = M * R * t_skin / (pi/4 * (R^4 - (R - t_skin)^4))
+% I = (pi/4 * (R^4 - (R - t_skin)^4))
+I = 585668557500.36 * 1e-12;    
+F_equiv = M * R * t_skin / I
 Ftot = F_equiv * sf;
 
 
@@ -75,7 +77,7 @@ Dskin = ABDskin(4:6,4:6);
 m=4;
 Pcr = platebucklingccss(Dskin, AR, a, m);
 
-skin_bucklingSF = Pcr / F_equiv
+skin_bucklingSF = Pcr / (F_equiv * b_spacing)
 
 
 bskin = a / 2*(1+2 * (a+Askin(2,1)/Askin(1,1)) * (1 - Pcr/Ftot) * ...
@@ -116,13 +118,13 @@ FIsec1 = safetyfact(-Fsec1 / section1_b, ABDsec1, thicknessessec1, tsection1, Q_
 FIsec2 = safetyfact(-Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_lamsec2, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
 
 
-EI_equiv = EIskin + EIsec1 + EIsec2
+EI_equiv = EIskin + EIsec1 + EIsec2;
 
-Pcrstiff = 7.56 * pi^2 * EI_equiv / a^2
+Pcrstiff = 7.56 * pi^2 * EI_equiv / a^2;
 
-bucklingSF = Pcrstiff / F_equiv
+bucklingSF = Pcrstiff / (F_equiv * b_spacing)
 
-F_equiv
+
 
 
 % Crippling Calc

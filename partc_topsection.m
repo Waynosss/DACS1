@@ -25,29 +25,34 @@ a = 0.5;
 b_spacing = 1.5;
 AR = a/b_spacing;
 
-l1 = [45, -45, 45, -45, 45, -45];
-l2 = [30, -30, 30, -30];
-l3 = [60, -60];
-l4 = [0, 90, 0, 90];
-l5 = [l1, l2, l3, l4];
-l6 = flip(l5, 2);
-skinlayup = [l5, l6];
+% l1 = [45, -45, 45, -45, 45, -45];
+% l2 = [30, -30];
+% l3 = [60, -60];
+% l4 = [0, 90, 0, 90];
+% l5 = [l1, l2, l3, l4];
+% l6 = flip(l5, 2);
+% skinlayup = [l5, l6];
+% skinlayup = [0, 30, 15, -30, 0, 90, 0, 30, -15, -30, 0];
+skinlayup = [45, -45, 0, 90, 0, -45, 45];
 
-t11 = [45, -45, 45, -45];
-t12 = [60, -60,  30, -30];
-t13 = [0, 90, 0, 90, 0,  0, 90];
+t11 = [45, -45];
+t12 = [30, -30];
+t13 = [0, 90, 0, 90];
 t14 = [t11, t12, t13];
 t15 = flip(t14);
 tsection1 = [t14, t15];
 
-t21 = [45, -45];
-t23 = [0, 90, 0, 90];
+
+
+
+t21 = [45, -45, 30, -30];
+t23 = [0, 90, 0, 90, 0];
 t24 = [t21, t23];
 t25 = flip(t24);
 tsection2 = [t24, t25];
 
-section1_b = 60e-3;
-section2_b = 90e-3;
+section1_b = 125e-3;
+section2_b = 110e-3;
 
 
 %Thickness Generation
@@ -108,7 +113,7 @@ FIsec2 = safetyfact(-Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_
 
 skinarea = pi*(R^2 - (R-t_skin)^2);
 stiffarea = section1_b * t_sec1 + section2_b * t_sec2;
-nstiff = 8;
+nstiff = 24;
 totarea = skinarea + nstiff*stiffarea;
 weight = totarea * rho
 
