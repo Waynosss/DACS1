@@ -116,11 +116,13 @@ FIsec1 = safetyfact(-Fsec1 / section1_b, ABDsec1, thicknessessec1, tsection1, Q_
 FIsec2 = safetyfact(-Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_lamsec2, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
 
 
-EI_equiv = EIskin + EIsec1 + EIsec2;
+EI_equiv = EIskin + EIsec1 + EIsec2
 
-Pcrstiff = 7.56 * pi^2 * EI_equiv / a^2;
+Pcrstiff = 7.56 * pi^2 * EI_equiv / a^2
 
-bucklingSF = Pcrstiff / Ftot
+bucklingSF = Pcrstiff / F_equiv
+
+F_equiv
 
 
 % Crippling Calc
