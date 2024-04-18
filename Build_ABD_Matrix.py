@@ -52,7 +52,7 @@ t = 0.135
 #Need strength
 Xt = 2200 # MPa
 Xc = 1800 #MPa
-Yt = 78 #MPa
+Yt = 70 #MPa
 Yc = 300 #MPa
 S = 100 #MPa
 
@@ -112,4 +112,4 @@ def getABDMatrix(angles, symmetry):
     BD = np.hstack((B, D))
     ABD = np.vstack((AB, BD))
     
-    return ABD, h
+    return D, ABD, h

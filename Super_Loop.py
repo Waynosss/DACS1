@@ -26,16 +26,20 @@ rad_sec = 0.15                          # [rad] radians of a sector of 450mm wid
 R = 3000                                # (mm)  Radius of Fuselage
 
 #Loads
-M = 15e6                                # MNmm
+M = 15e9                                # MNmm
 V = 1.5e6                               # MN
 
 def getABD(layup):
-    D, ABD, h = abdFile.getABDMatrix(layup, 1)
-    return D, ABD, h
+    D, ABD, _ = abdFile.getABDMatrix(layup, 1)
+    return D, ABD
 
 def getOriginalBottomLayup(): # for now can use this original layup. May change later to include bottom section in loop.
-    return [45, -45, 45, -45, 45, -45, 30, -30, 30, -30, 45, -45, 30, -30, 30, -30, 45, -45, 60, -60, 60, -60, 15, -15,  0, 90, 0, 90,45, -45, 90, 0]
-    #return getBottomLayup.main()
+    #return [45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 90, 0, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 30, -30, 30\
+        #, -30, 45, -45, 30, -30, 30, -30, 45, -45, 60, -60, 60, -60, 0, 90, 0, 15, -15, 0, 90, 0, 90, 45, -45, 90, 0]
+        # The commented one above was the assumed bottom layup before integrating this strong loop. Now we get the below because Iz is more accurate defined in this loop.
+    return [45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 30, -30, 30, -30, 30, -30, 30, -30, 30, -30, 60, -60, 60, -60, 60, -60, 60, -60, 15, -15, 0, 90, 75, -75, 0, 90, 0, 90\
+                 , 45, -45, 45, -45, 45, -45, 45, -45, 30, -30, 30, -30, 30, -30, 30, -30, 60, -60, 60, -60, 60, -60, 15, -15, 15, -15, 0, 90, 75, -75, 0, 90, 0, 90, 0, 90]
+
     
 def getTopLayup(): #same as above. May change later
     return [0, 0, -45, 45, 0, 0, 90]
@@ -72,6 +76,10 @@ def getBucklingLoadSSSS(D, m, a, b):
     AR = a/b;
     return np.pi**2 * (D11*m**4 + 2*(D12+2*D66)*m**2*AR**2 + D22*AR**4 ) / (a**2 * m**2)
 
+def getBucklingLoadShear(D, a, b):
+    D11 = D[0][0]; D12 = D[0][1]; D66 = D[2][2]; D22 = D[1][1];
+    return 9 * np.pi**4 * b / (32 * a**3 * (D11 + 2*D12 + 2*D66)*a**2/b**2 + D22 * a**4 / b**4) / 1.27
+
 
 """Initialise Iz, t, layup arrays"""
 # 21 is half of the way around the circle. But adding an extra because top and bottom are wider circles
@@ -79,22 +87,23 @@ def getBucklingLoadSSSS(D, m, a, b):
 # But better to do it this way than appending because this way is more scalable for re-looping
 Iz = [5e9] * 22 #starting with what Iz / 42 if Iz is for constant t = 2.5mm all around
 ts = [2.5] * 22 # Starting with 2.5mm average thickness all around
+ts[0] = 9.72
 layups = [[] for _ in range(22)] 
-
+len_layups = [[] for _ in range(22)] 
+weight_section = [[] for _ in range(22)] 
 
 
 layups[0] = getOriginalBottomLayup()    # make bottom layup 1st layup
 layups[21] = getTopLayup()              # make top layup last layup
-Iz_total = Iz[0] + Iz[-1] + sum(Iz[1:-1])*2                      # Total Iz of the fuselage. Subject to change in loop
-
+Iz_total = Iz[0] + Iz[-1] + sum(Iz[1:-1])*2  # Total Iz of the fuselage. Subject to change in loop
+len_layups[0] = len(layups[0]); len_layups[21] = len(layups[21]); 
 
 
 def increaseLayup(i):
-    layups[i] = [45, -45, 90, 0] + layups[i]
+    layups[i] = [45, -45] + layups[i]
     #print(f"Length = {len(layups[i])}")
     ts[i] = len(layups[i]) * 0.135 * 2   # 2 because symmetrical
     Iz[i] = Iz_sec(ts[i], alphas[i])
-    #Iz_total = 
     
 def decreaseLayup(i):
     layups[i] = layups[i][2:]           # this removes the 1st 2 elements from the list
@@ -107,53 +116,73 @@ alphas = []                             # Make list of the max angle for each se
 alpha = 0.15/2 + 0.15                   #the first alpha
 while alpha < np.pi:
     alphas.append(alpha); alpha += 0.15
-                       
-i = 1
-for alpha in alphas:
-    alpha_mid = alpha-0.15/2 if i!=0 else 0.075 # Take alpha at the mid point of the sector
-    layups[i] = layups[i-1]                 # start by making this one the same as the previous
-    y = -R*np.cos(alpha_mid)                # get the y value at the centre of the sector
-    """Start loop to adjust layup of sector"""
-    adjusting_layup = True;                 # Set True until layup for sector confirmed
-    while adjusting_layup:                  # Until layup confirmed, repeat loop
-        #print(y)
-        #print(alpha)                       # uncomment these prints to ensure in the right ranges
-        Tau_sec = Tau_(Iz_total*4, ts[i], alpha_mid) # Get shear stress at section
-        M_sec = M_(Iz_total*4, y)             # Get Stress due to moment at section
-        
-        ys.append(y)                        # append for stress distribution curve 
-        Taus.append(Tau_sec);M_s.append(M_sec); # append for stress distribution curve 
-        
-        t = len(layups[i]) * 0.135 * 2      # thickness of the laminate * 2 because symmetrical
-        ts[i] = t
-        Ns = Tau_sec * t; Nx = M_sec * t    # Get into N/mm. Axial loads.
-        Nxs.append(Nx); Nss.append(Ns)      # append for plotting
-        
-        D, ABD, h = getABD(layups[i])
-        
-        """Check Failure Indexes"""
-        FI = FI_file.checkFI(Nx, Ns, ABD, layups[i]) #Get CLT Failure Index utilising Puck and Max. Stress Failure Criteria
-        bucklingLoad = getBucklingLoadSSSS(D, 1, 500, 450)  #m=1, a=500,b=540mm # b load in N / mm 
 
-        FI_FOS = 1/FI
-        if FI_FOS < 2:
-            increaseLayup(i)
-        elif y < 0 and bucklingLoad < 2 * abs(Nx):  # If we are in the bottom half, check for buckling stress
-            increaseLayup(i)
-        elif y < 0 and bucklingLoad > 2.5 * abs(Nx) and FI < 0.33: #and FI > 0.33:
-            decreaseLayup(i)
-        else:
-            adjusting_layup = False         # FI's are all good. Layup is good. Move to next sector
-    print(layups[i])
-    #Finished this iteration of loop
-    alpha += 0.15; i += 1                   # move to the next sector
+Iz_totals = []
+#while Iz_totals[-1] - Iz_totals[-2] < 5e11: # change this to a while loop checking tolerances
+for i in range(1, 7, 1):
+    i = 1
+    Taus = []; M_s = []; ys = []; Nss = []; Nxs = []; Ns_ratios = []
+    for alpha in alphas:
+        layups[i] = layups[i-1]                 # start by making this one the same as the previous
+        y = -R*np.cos(alpha)                    # get the y value at the sector.
+        """Start loop to adjust layup of sector"""
+        adjusting_layup = True;                 # Set True until layup for sector confirmed
+        while adjusting_layup:                  # Until layup confirmed, repeat loop
+            #print(y)
+            #print(alpha)                       # uncomment these prints to ensure in the right ranges
+            Tau_sec = Tau_(Iz_total*4, ts[i], alpha) # Get shear stress at section
+            Mz = M_(Iz_total*4, y)           # Get Stress due to moment at section
+            
+            t_ = len(layups[i]) * t * 2     # thickness of the laminate * 2 because symmetrical
+            ts[i] = t_
+            Ns = Tau_sec * t; Nx = Mz * t  # Get into N/mm. Axial loads.
+            
+            D, ABD = getABD(layups[i])
+            """Check Failure Indexes"""
+            FI = FI_file.checkFI(Nx, Ns, ABD, layups[i]) #Get CLT Failure Index utilising Puck and Max. Stress Failure Criteria
+            bucklingLoad = getBucklingLoadCCSS(D, 1, 500, 450) #m=1, a=500,b=540mm # b load in N / mm 
+            shearBL = getBucklingLoadShear(D, 500, 450)
+            shearFOS = shearBL / abs(Ns) 
+            Nx_ratio = Nx / bucklingLoad
+            Ns_ratio = (1/abs(Nx_ratio))**0.5
+            FI_FOS = 1/FI
+            if FI_FOS < 2:
+                increaseLayup(i)
+            elif y < 0 and bucklingLoad < 2 * abs(Nx):  # If we are in the bottom half, check for buckling stress
+                increaseLayup(i)
+            elif y < 0 and bucklingLoad > 2.7 * abs(Nx): # and FI < 0.33: #and FI > 0.33:
+                decreaseLayup(i)
+            elif y > 0 and FI_FOS > 2 and len(layups[i])>4:
+                decreaseLayup(i)
+            else:
+                adjusting_layup = False         # FI's are all good. Layup is good. Move to next sector
+        len_layups[i] = len(layups[i])
+        ys.append(y)                        # append for stress distribution curve 
+        Taus.append(Tau_sec);M_s.append(Mz); # append for stress distribution curve 
+        Nxs.append(Nx); Nss.append(Ns)      # append for force distribution curve
+        Ns_ratios.append(Ns_ratio)
+        weight_section[i] = len_layups[i] * 2 * 0.135 * 0.5 * 0.45 / 1000 * 1610 
+        #Finished this iteration of loop
+        alpha += 0.15; i += 1                   # move to the next sector
+    # after looping thorugh the whole fuse
+    Iz[0] = Iz[1]; Iz[-1] = Iz[-2]
+    Iz_total = Iz[0] + Iz[-1] + sum(Iz[1:-1])*2 # *2 because both sides of fuse
+    ts[0] = ts[1]; ts[-1] = ts[-2]
+    Iz_totals.append(Iz_total)
+print(f"Iz_final = {Iz_total}")
     
-    
+weight_section[0] = weight_section[1]; weight_section[-1] = weight_section[-2]
+weight_total = weight_section[0] + weight_section[-1] + sum(weight_section[1:-1])*2
+print(f"Weight Composite = {weight_total:.2f} kg")
+weight_Al = 2 * np.pi * 3 * 7/1000 * 0.5 * 2770 
+print(f"Weight aluminium = {weight_Al:.2f} kg")
+
+
+
 plt.figure()
-plt.plot(Taus, np.array(ys)/1000, label = "Tau", color='orange')
-plt.plot(M_s, np.array(ys)/1000, label = "Moment_Stress", color='blue')
-plt.xlabel('Stress (MPa)')
-plt.ylabel('y (m)')
+plt.plot(np.array(ys)/1000, Ns_ratios, label = "Nxy / Nxy crit", color='orange')
+plt.xlabel('y (m)')
+plt.ylabel('Nxy / Nx_crit')
 #plt.title('Freq of angle present in lowest FI layups for tensile Max')
 plt.grid(True)
 #plt.ylim(ymin=0)#, ymax=150)  # Adjust the limits for the y axis
@@ -171,6 +200,18 @@ plt.grid(True)
 plt.legend()
 plt.show()
 
-print(Iz_total)
+plt.figure()
+plt.plot(Taus, np.array(ys)/1000, label = "Tau", color='orange')
+plt.plot(M_s, np.array(ys)/1000, label = "Moment_Stress", color='blue')
+plt.xlabel('Stress (MPa)')
+plt.ylabel('y (m)')
+#plt.title('Freq of angle present in lowest FI layups for tensile Max')
+plt.grid(True)
+#plt.ylim(ymin=0)#, ymax=150)  # Adjust the limits for the y axis
+plt.legend()
+plt.show()
+
+
+
 
 
