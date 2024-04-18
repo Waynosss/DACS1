@@ -25,24 +25,24 @@ a = 0.5;
 b_spacing = 1.5;
 AR = a/b_spacing;
 
-l1 = [45, -45, 45, -45, 45, -45, 45, -45, 45, -45];
-l2 = [30, -30, 30, -30, 30,];
-l3 = [60, -60];
-l4 = [0, 90, 0, 90, 0, 90, 0, 90];
+l1 = [45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45];
+l2 = [30, -30, 30, -30, 30, -30, 30, -30, 30, -30, 30, -30];
+l3 = [60, -60, 60, -60, 60, -60, 60, -60];
+l4 = [0, 90, 0, 90, 0, 90];
 l5 = [l1, l2, l3, l4];
 l6 = flip(l5, 2);
 skinlayup = [l5, l6];
 
 t11 = [45, -45, 45, -45, 45, -45];
-t12 = [60, -60,  30, -30];
-t13 = [0, 90, 0, 90, 0, 90];
+t12 = [60, -60, 30, -30];
+t13 = [0, 90, 0, 90, 0, 90, 0, 90, 0, 90];
 t14 = [t11, t12, t13];
 t15 = flip(t14);
 tsection1 = [t14, t15];
 
 t21 = [45, -45, 45, -45];
 t22 = [60, -60];
-t23 = [0, 90, 0, 90, 0, 90];
+t23 = [0, 90, 0, 90, 0, 90, 0, 90, 0, 90];
 t24 = [t21, t22, t23];
 t25 = flip(t24);
 tsection2 = [t24, t25];
@@ -53,17 +53,17 @@ section2_b = 110e-3;
 
 %Thickness Generation
 thicknessesskin= thicknessesgen(skinlayup, t);
-t_skin = sum(thicknessesskin)
+t_skin = sum(thicknessesskin);
 thicknessessec1= thicknessesgen(tsection1, t);
-t_sec1= sum(thicknessessec1)
+t_sec1= sum(thicknessessec1);
 thicknessessec2= thicknessesgen(tsection2, t);
-t_sec2 = sum(thicknessessec2)
+t_sec2 = sum(thicknessessec2);
 
 % Total Force
 sf = 2;
 % I = (pi/4 * (R^4 - (R - t_skin)^4))
 I = 585668557500.36 * 1e-12;    
-F_equiv = M * R * t_skin / I
+F_equiv = M * R * t_skin / I;
 Ftot = F_equiv * sf;
 
 
@@ -74,10 +74,12 @@ ABDskin = ABD_matrix(skinlayup, thicknessesskin, Q_arrayskin);
 Askin = ABDskin(1:3,1:3);
 Dskin = ABDskin(4:6,4:6);
 
-m=4;
+m=2;
 Pcr = platebucklingccss(Dskin, AR, a, m);
 
-skin_bucklingSF = Pcr / (F_equiv * b_spacing)
+skin_bucklingSF = Pcr / (F_equiv)
+
+PB = F_equiv / Pcr
 
 
 bskin = a / 2*(1+2 * (a+Askin(2,1)/Askin(1,1)) * (1 - Pcr/Ftot) * ...
