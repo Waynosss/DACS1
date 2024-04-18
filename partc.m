@@ -47,7 +47,7 @@ t24 = [t21, t22, t23];
 t25 = flip(t24);
 tsection2 = [t24, t25];
 
-section1_b = 80e-3;
+section1_b = 140e-3;
 section2_b = 110e-3;
 
 
@@ -62,7 +62,7 @@ t_sec2 = sum(thicknessessec2);
 % Total Force
 sf = 2;
 % I = (pi/4 * (R^4 - (R - t_skin)^4))
-I = 585668557500.36 * 1e-12;    
+I = 1188721937845.14 * 1e-12;    
 F_equiv = M * R * t_skin / I;
 Ftot = F_equiv * sf;
 
@@ -74,13 +74,12 @@ ABDskin = ABD_matrix(skinlayup, thicknessesskin, Q_arrayskin);
 Askin = ABDskin(1:3,1:3);
 Dskin = ABDskin(4:6,4:6);
 
-m=2;
+m=1;
 Pcr = platebucklingccss(Dskin, AR, a, m);
 
 skin_bucklingSF = Pcr / (F_equiv)
 
 PB = F_equiv / Pcr
-
 
 bskin = a / 2*(1+2 * (a+Askin(2,1)/Askin(1,1)) * (1 - Pcr/Ftot) * ...
     (Askin(1,1)/(Askin(1,1)+3*Askin(2,2))))
@@ -122,10 +121,9 @@ FIsec2 = safetyfact(-Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_
 
 EI_equiv = EIskin + EIsec1 + EIsec2;
 
-Pcrstiff = 7.56 * pi^2 * EI_equiv / a^2;
+Pcrstiff = (7.56 * (pi^2) * EI_equiv) / (a^2);
 
 bucklingSF = Pcrstiff / (F_equiv * b_spacing)
-
 
 
 

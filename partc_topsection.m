@@ -22,7 +22,7 @@ thick = 2.5e-3;
 
 %% Skin stiffend panel buckling Analysis
 a = 0.5;
-b_spacing = 1.5;
+b_spacing = 0.7;
 AR = a/b_spacing;
 
 % l1 = [45, -45, 45, -45, 45, -45];
@@ -33,7 +33,7 @@ AR = a/b_spacing;
 % l6 = flip(l5, 2);
 % skinlayup = [l5, l6];
 % skinlayup = [0, 30, 15, -30, 0, 90, 0, 30, -15, -30, 0];
-skinlayup = [45, -45, 0, 90, 0, -45, 45];
+skinlayup = [45, -45, 0, 90, 90, 0, -45, 45];
 
 t11 = [45, -45];
 t12 = [30, -30];
@@ -41,9 +41,6 @@ t13 = [0, 90, 0, 90];
 t14 = [t11, t12, t13];
 t15 = flip(t14);
 tsection1 = [t14, t15];
-
-
-
 
 t21 = [45, -45, 30, -30];
 t23 = [0, 90, 0, 90, 0];
@@ -110,14 +107,11 @@ FIsec2 = safetyfact(-Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_
 
 
 % Mass Calc
-
 skinarea = pi*(R^2 - (R-t_skin)^2);
 stiffarea = section1_b * t_sec1 + section2_b * t_sec2;
 nstiff = 24;
 totarea = skinarea + nstiff*stiffarea;
 weight = totarea * rho
-
-
 
 
 
