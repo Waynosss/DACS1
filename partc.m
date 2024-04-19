@@ -18,30 +18,29 @@ S = 100e6;
 t = 0.135e-3;
 rho = 1610;
 
-thick = 2.5e-3;
 
 %% Skin stiffend panel buckling Analysis
 a = 0.5;
-b_spacing = 1.5;
+b_spacing = 0.7;
 AR = a/b_spacing;
 
-l1 = [45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45];
-l2 = [30, -30, 30, -30, 30, -30, 30, -30, 30, -30, 30, -30];
+l1 = [45, -45, 45, -45, 45, -45, 45, -45];
+l2 = [30, -30, 30, -30, 30, -30, 30, -30];
 l3 = [60, -60, 60, -60, 60, -60, 60, -60];
 l4 = [0, 90, 0, 90, 0, 90];
 l5 = [l1, l2, l3, l4];
 l6 = flip(l5, 2);
 skinlayup = [l5, l6];
 
-t11 = [45, -45, 45, -45, 45, -45];
-t12 = [60, -60, 30, -30];
-t13 = [0, 90, 0, 90, 0, 90, 0, 90, 0, 90];
+t11 = [45, -45, 45, -45];
+t12 = [60, -60];
+t13 = [0, 90, 0, 90, 0, 90];
 t14 = [t11, t12, t13];
 t15 = flip(t14);
 tsection1 = [t14, t15];
 
-t21 = [45, -45, 45, -45];
-t22 = [60, -60];
+t21 = [45, -45, 45, -45, 45, -45];
+t22 = [60, -60, 30, -30];
 t23 = [0, 90, 0, 90, 0, 90, 0, 90, 0, 90];
 t24 = [t21, t22, t23];
 t25 = flip(t24);
@@ -86,7 +85,7 @@ bskin = a / 2*(1+2 * (a+Askin(2,1)/Askin(1,1)) * (1 - Pcr/Ftot) * ...
 EA_axialskin = EA(t_skin, Askin, bskin);
 
 abdskin = ABDskin^-1;
-EIskin = EI(t_skin, abdskin(4:6, 4:6));
+Ebskin = EI(t_skin, abdskin(4:6, 4:6));
 
 
 
@@ -96,7 +95,7 @@ Q_arraysec1 = Qarray(tsection1, Q_lamsec1);
 ABDsec1 = ABD_matrix(tsection1, thicknessessec1, Q_arraysec1);
 EA_sec1 = EA(t_sec1, ABDsec1(1:3,1:3), section1_b);
 abdsec1 = ABDsec1^-1 ;
-EIsec1 = EI(t_sec1, abdsec1(4:6, 4:6));
+Ebsec1 = EI(t_sec1, abdsec1(4:6, 4:6));
 
 %Section 2 : vertical to skin
 Q_lamsec2 = Qlam(Ex, Ey, vxy, Gxy);
@@ -104,7 +103,7 @@ Q_arraysec2 = Qarray(tsection2, Q_lamsec2);
 ABDsec2 = ABD_matrix(tsection2, thicknessessec2, Q_arraysec2);
 EA_sec2 = EA(t_sec2, ABDsec2(1:3,1:3), section2_b);
 abdsec2 = ABDsec2^-1 ;
-EIsec2 = EI(t_sec2, abdsec2(4:6, 4:6));
+Ebsec2 = EI(t_sec2, abdsec2(4:6, 4:6));
 
 %Force Distributions 
 Fskin = Ftot * EA_axialskin / (EA_sec1 + EA_sec2);
@@ -118,14 +117,41 @@ FIskin = safetyfact(-Fskin / (bskin*2), ABDskin, thicknessesskin, skinlayup, Q_l
 FIsec1 = safetyfact(-Fsec1 / section1_b, ABDsec1, thicknessessec1, tsection1, Q_lamsec1, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
 FIsec2 = safetyfact(-Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_lamsec2, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
 
+y = (ABDskin(1,1) * bskin*2 * t_skin * 0.5 * t_skin + ...
+    ABDsec1(1,1) * section1_b * t_sec1 * (0.5 *t_sec1 + t_skin) +...
+    ABDsec2(1,1) * section2_b * t_sec2 * (0.5 * section2_b + t_sec1 + t_skin))/ ...
+    (ABDskin(1,1) * bskin*2 * t_skin + ...
+    ABDsec1(1,1) * section1_b * t_sec1  +...
+    ABDsec2(1,1) * section2_b * t_sec2);
+
+
+wskin = 2 * bskin;
+hskin = t_skin;
+
+wsec1 = section1_b;
+hsec1 = t_sec1;
+
+wsec2 = t_sec2;
+hsec2 = section2_b;
+
+dskin = y - 0.5 * t_skin;
+dsec1 = y - t_skin - 0.5 * t_sec1; 
+dsec2 = y - t_skin - t_sec1 - 0.5 * section2_b;
+
+
+EIskin = Ebskin * Istiff(wskin, hskin, dskin);
+EIsec1 = Ebsec1 * Istiff(wsec1, hsec1, dsec1);
+EIsec2 = Ebsec2 * Istiff(wsec1, hsec2, dsec2);
+
 
 EI_equiv = EIskin + EIsec1 + EIsec2;
 
-Pcrstiff = (7.56 * (pi^2) * EI_equiv) / (a^2);
+Pcrstiff = (7.56 * (pi^2) * EI_equiv * I) / (a^2);
 
-bucklingSF = Pcrstiff / (F_equiv * b_spacing)
+bucklingSF = Pcrstiff / F_equiv 
 
-
+Pcrstiff
+F_equiv
 
 % Crippling Calc
 D66crip = ABDsec1(6,6);
@@ -139,14 +165,33 @@ sigmaultc = sigmacrip / ratio;
 FIcrip = safetyfact(-Fsec1 / section1_b, ABDsec1, thicknessessec1, tsection1, Q_lamsec1, Xt, sigmaultc, Yt, Yc, vxy, mof, Ex, S)
 
 
+% Radius Checker
+EA_equiv = EA_sec1 + EA_axialskin + EA_sec2;
+gap = 4*t;
+% gap = t_sec2;
+r = 2.5;
+A = Af(r, gap);
+F = Ff(Ex, A, EA_equiv, Ftot);
+
+stress_filler = F/A;
+fillerSF = Ex / stress_filler   
+
 % Mass Calc
 
 skinarea = pi*(R^2 - (R-t_skin)^2);
 stiffarea = section1_b * t_sec1 + section2_b * t_sec2;
-nstiff = 8;
+nstiff = 18;
 totarea = skinarea + nstiff*stiffarea;
 weight = totarea * rho
 
+
+function [A] = Af(R, t)
+    A = 2 * (R + 0.5*t)^2 * (1 - pi / 4);
+end
+
+function [F] = Ff(Ef, Af, EA, Ftot)
+    F = Ef*Af/EA * Ftot;
+end
 
 
 function [sf] = safetyfact(F, ABD, thicknesses, layup, Q_lam, Xt, Xc, Yt, Yc, v12, mof, E1, S)
@@ -176,6 +221,10 @@ end
 function [EIi] = EI(t, d)
     d11 = d(1,1);
     EIi = 12 / ( t^3 * d11) ;
+end
+
+function [I] = Istiff(w, h, d)
+    I = w * h^3 / 12 + w * h * d^2;
 end
 
 % Buckling load of skin

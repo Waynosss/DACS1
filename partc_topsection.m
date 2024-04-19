@@ -36,20 +36,20 @@ AR = a/b_spacing;
 skinlayup = [45, -45, 0, 90, 90, 0, -45, 45];
 
 t11 = [45, -45];
-t12 = [30, -30];
-t13 = [0, 90, 0, 90];
+t12 = [];
+t13 = [0, 90, 0, 90, 0, 90];
 t14 = [t11, t12, t13];
 t15 = flip(t14);
 tsection1 = [t14, t15];
 
 t21 = [45, -45, 30, -30];
-t23 = [0, 90, 0, 90, 0];
+t23 = [0, 90, 0, 90];
 t24 = [t21, t23];
 t25 = flip(t24);
 tsection2 = [t24, t25];
 
 section1_b = 125e-3;
-section2_b = 110e-3;
+section2_b = 100e-3;
 
 
 %Thickness Generation
@@ -64,7 +64,7 @@ t_sec2 = sum(thicknessessec2);
 %Skin
 Q_lamskin = Qlam(Ex, Ey, vxy, Gxy);
 Q_arrayskin = Qarray(skinlayup, Q_lamskin);
-ABDskin = ABD_matrix(skinlayup, thicknessesskin, Q_arrayskin);
+ABDskin = ABD_matrix(skinlayup, thicknessesskin, Q_arrayskin);  
 Askin = ABDskin(1:3,1:3);
 Dskin = ABDskin(4:6,4:6);
 
