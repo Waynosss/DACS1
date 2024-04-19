@@ -108,6 +108,12 @@ FIsec1 = safetyfactshear(-Fsec1 / section1_b, ABDsec1, thicknessessec1, tsection
 FIsec2 = safetyfactshear(-Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_lamsec2, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
 
 % Buckling SF
+critflange = 3.46e-3; %N/m
+critweb = 7.66e-3;
+
+flange_buckle_SF = critflange / FIsec1;
+flange_buckle_SF = critflange / FIsec1;
+
 
 
 % Mass Calc
@@ -365,7 +371,7 @@ function [failure] = puck_iff(sigma2, sigma12, Yt, Yc, S)
         f = sqrt(a + b * c) + d;
 
     %Mode B and C 
-    elseif sigma2 < 0
+    elseif sigma2 <= 0
         sigma23a = S / (2 * p12n) * (sqrt(1+2*p12n*Yc/S)-1);
         p23n = p12n * sigma23a / S;
         sigma12c = S* sqrt(1 + 2*p23n);

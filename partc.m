@@ -34,14 +34,14 @@ skinlayup = [l5, l6];
 
 t11 = [45, -45, 45, -45];
 t12 = [60, -60];
-t13 = [0, 90, 0, 90, 0, 90];
+t13 = [0, 90, 0, 90, 0, 90, 0, 90, 0, 90];
 t14 = [t11, t12, t13];
 t15 = flip(t14);
 tsection1 = [t14, t15];
 
 t21 = [45, -45, 45, -45, 45, -45];
 t22 = [60, -60, 30, -30];
-t23 = [0, 90, 0, 90, 0, 90, 0, 90, 0, 90];
+t23 = [0, 90, 0, 90, 0, 90, 0, 90];
 t24 = [t21, t22, t23];
 t25 = flip(t24);
 tsection2 = [t24, t25];
@@ -81,7 +81,7 @@ skin_bucklingSF = Pcr / (F_equiv)
 PB = F_equiv / Pcr
 
 bskin = a / 2*(1+2 * (a+Askin(2,1)/Askin(1,1)) * (1 - Pcr/Ftot) * ...
-    (Askin(1,1)/(Askin(1,1)+3*Askin(2,2))))
+    (Askin(1,1)/(Askin(1,1)+3*Askin(2,2))));
 EA_axialskin = EA(t_skin, Askin, bskin);
 
 abdskin = ABDskin^-1;
@@ -150,8 +150,8 @@ Pcrstiff = (7.56 * (pi^2) * EI_equiv * I) / (a^2);
 
 bucklingSF = Pcrstiff / F_equiv 
 
-Pcrstiff
-F_equiv
+
+
 
 % Crippling Calc
 D66crip = ABDsec1(6,6);

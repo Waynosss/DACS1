@@ -103,11 +103,17 @@ Fsec2 = Ftot * EA_sec2 / (EA_axialskin + EA_sec1);
 %Puck failure checking
 mof = 1.1;
 
-FIskin = safetyfactshear(-Fskin / (bskin*2), ABDskin, thicknessesskin, skinlayup, Q_lamskin, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
-FIsec1 = safetyfactshear(-Fsec1 / section1_b, ABDsec1, thicknessessec1, tsection1, Q_lamsec1, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
-FIsec2 = safetyfactshear(-Fsec2 / section2_b, ABDsec2, thicknessessec2, tsection2, Q_lamsec2, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
+FIskin = safetyfactshear(-Fskin , ABDskin, thicknessesskin, skinlayup, Q_lamskin, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
+FIsec1 = safetyfactshear(-Fsec1 , ABDsec1, thicknessessec1, tsection1, Q_lamsec1, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
+FIsec2 = safetyfactshear(-Fsec2 , ABDsec2, thicknessessec2, tsection2, Q_lamsec2, Xt, Xc, Yt, Yc, vxy, mof, Ex, S)
 
 % Buckling SF
+critflange = 3.46; %N/m
+critweb = 7.66;
+
+flange_buckle_SF = critflange / FIsec1
+web_buckle_SF = critflange / FIsec1
+
 
 
 % Mass Calc
@@ -132,7 +138,7 @@ function [sf] = safetyfactshear(F, ABD, thicknesses, layup, Q_lam, Xt, Xc, Yt, Y
             sigma3 = 0; 
             sigma12 = stresses_princ(3,k);
             ff(k) = puck_ff(sigma1, sigma2, sigma3, Xt, Xc, v12, mof, E1);
-            iff(k) = puck_iff(sigma2, sigma12, Yt, Yc, S)
+            iff(k) = puck_iff(sigma2, sigma12, Yt, Yc, S);
     end
 
     sf = max(max(ff), max(iff));
@@ -353,7 +359,7 @@ end
 function [failure] = puck_iff(sigma2, sigma12, Yt, Yc, S)
     p12p = 0.3;
     p12n = 0.2;
-    sigma2
+
     %Mode A
     if sigma2 > 0
         p12p = 0.3;
@@ -365,7 +371,7 @@ function [failure] = puck_iff(sigma2, sigma12, Yt, Yc, S)
         f = sqrt(a + b * c) + d;
 
     %Mode B and C 
-    elseif sigma2 < 0
+    elseif sigma2 <= 0
         sigma23a = S / (2 * p12n) * (sqrt(1+2*p12n*Yc/S)-1);
         p23n = p12n * sigma23a / S;
         sigma12c = S* sqrt(1 + 2*p23n);

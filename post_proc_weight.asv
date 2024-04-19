@@ -1,4 +1,4 @@
-%% Densitys
+%% Radius and Densitys
 R = 3;
 
 rho_aly = 2770;
@@ -6,16 +6,13 @@ rho_cf = 1610;
 
 %% Part A
 
-m_a = 365; %kg/m
+m_a = 396.3182; %kg/m
 
 
 %% Part B
-t_b_top = 0.0015; 
-t_b_side = 0.004;
-t_b_bot = 0.007; %m
-
-
-
+t_b_top = 0.00189; 
+t_b_side = 0.00108;
+t_b_bot = 0.00864; %m
 
 theta_top = 60;
 theta_bottom = 130;
@@ -32,13 +29,13 @@ m_b = m_bot + m_top + m_side
 
 %% Part C
 
-num_stringer_1 = 4;
-num_stringer_2 = 2;
-num_stringer_3 = 4;
+num_stringer_1 = 8;
+num_stringer_2 = 8;
+num_stringer_3 = 8;
 
-a_stringer_1 = 4;
-a_stringer_2 = 2;
-a_stringer_3 = 4;
+a_stringer_1 = 125e-3 * 0.0022 +  0.0022 * 100e-3;
+a_stringer_2 = 140e-3 * 0.0043 + 0.0049 * 110e-3;
+a_stringer_3 = 0.0027 * ;
 
 m_stringers = num_stringer_1 * a_stringer_1 + num_stringer_2 * a_stringer_2 ...
      + num_stringer_3 * a_stringer_3;
@@ -61,9 +58,9 @@ m_c = mskin1 + mskin2 + mskin3 + m_stringers
 
 
 %% Comparison
-pab = percdiff(m_b, m_a);
-pac = percdiff(m_c, m_a);
-pbc = percdiff(m_c, m_b);
+pab = percdiff(m_b, m_a)
+pac = percdiff(m_c, m_a)
+pbc = percdiff(m_c, m_b)
 
 %% Function
 function [p] = percdiff(m1, m2)

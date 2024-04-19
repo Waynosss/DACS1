@@ -6,13 +6,13 @@ rho_cf = 1610;
 
 %% Part A
 
-m_a = 365; %kg/m
+m_a = 396.3182; %kg/m
 
 
 %% Part B
-t_b_top = 0.0015; 
-t_b_side = 0.004;
-t_b_bot = 0.007; %m
+t_b_top = 0.00189; 
+t_b_side = 0.00108;
+t_b_bot = 0.00864; %m
 
 theta_top = 60;
 theta_bottom = 130;
@@ -29,24 +29,24 @@ m_b = m_bot + m_top + m_side
 
 %% Part C
 
-num_stringer_1 = 4;
-num_stringer_2 = 2;
-num_stringer_3 = 4;
+num_stringer_1 = 8;
+num_stringer_2 = 8;
+num_stringer_3 = 8;
 
-a_stringer_1 = 4;
-a_stringer_2 = 2;
-a_stringer_3 = 4;
+a_stringer_1 = 125e-3 * 0.0022 +  0.0022 * 100e-3;
+a_stringer_2 = 140e-3 * 0.0043 + 0.0049 * 110e-3;
+a_stringer_3 = 125e-3 * 0.0027 + 100e-3 * 0.0022 ;
 
 m_stringers = num_stringer_1 * a_stringer_1 + num_stringer_2 * a_stringer_2 ...
      + num_stringer_3 * a_stringer_3;
 
 
-skin_t_1 = 0.003;
-skin_t_2 = 0.002;
-skin_t_3 = 0.005;
+skin_t_1 = 0.0081;
+skin_t_2 = 0.0011;
+skin_t_3 = 0.0011;
 
-theta1 = 90;
-theta2 = 50;
+theta1 = 130;
+theta2 = 90;
 theta3 = 360 - theta1 - theta2;
 
 mskin1 = mskinsect(R, theta1, skin_t_1, rho_cf);
