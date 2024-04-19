@@ -11,6 +11,7 @@ After running, the print shows the final weight of the fuselage and weight reduc
 
 
 @author: nathanrawiri
+@team: Roman Crimi, Roman Bruce
 """
 
 
