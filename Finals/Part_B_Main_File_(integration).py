@@ -41,8 +41,8 @@ def getOriginalBottomLayup(): # for now can use this original layup. May change 
         # The commented one above was the assumed bottom layup before integrating this strong loop. Now we get the below because Iz is more accurate defined in this loop.
     #return [45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 30, -30, 30, -30, 30, -30, 30, -30, 30, -30, 60, -60, 60, -60, 60, -60, 60, -60, 15, -15, 0, 90, 75, -75, 0, 90, 0, 90]
                  #, 45, -45, 45, -45, 45, -45, 45, -45, 30, -30, 30, -30, 30, -30, 30, -30, 60, -60, 60, -60, 60, -60, 15, -15, 15, -15, 0, 90, 75, -75, 0, 90, 0, 90, 0, 90]
-     return [45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 30, -30, 30, -30, 30, -30, 30, -30, 30, -30, 60, -60, 60, -60, 60, -60, 60, -60, 15, -15, 0, 90, 75, -75, 0, 90, 0, 90\
-                  , 45, -45, 45, -45,  30, -30, 30, -30, 60, -60, 60, -60,  15, -15, 0, 90, 0, 90, 0, 90]
+     return [45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 45, -45, 30, -30, 30, -30, 30, -30, 30, -30, 30, -30, 60, -60, 60, -60, 60, -60, 60, -60, 15, -15, 0, 90, 75, -75, 0, 90, 0, 90\
+                  , 30, -30, 30, -30, 60, -60, 60, -60,  15, -15, 0, 90, 0, 90, 45, -45, 0, 90]
 
     
 def getTopLayup(): #same as above. May change later
@@ -96,7 +96,7 @@ def getBucklingLoadCompAndShear(D, a, b, k):
 # 21 is half of the way around the circle. But adding an extra because top and bottom are wider circles
 # potential point of error if 20 is not enough sections.
 # But better to do it this way than appending because this way is more scalable for re-looping
-Iz = [2.1e12] * 22 #starting with what Iz / 42 if Iz is for constant t = 2.5mm all around
+Iz = [2.5e12] * 22 #starting with what Iz / 42 if Iz is for constant t = 2.5mm all around
 ts = [2.5] * 22 # Starting with 2.5mm average thickness all around
 ts[0] = 9.72
 layups = [[] for _ in range(22)] 
@@ -114,11 +114,11 @@ def increaseLayup(i):
     layups[i] = [45, -45] + layups[i]
     #print(f"Length = {len(layups[i])}")
     ts[i] = len(layups[i]) * 0.135 * 2   # 2 because symmetrical
-    Iz[i] = Iz_sec(ts[i], alphas[i])
+    Iz[i] = Iz_sec(ts[i], alphas[i])     # Recompute Iz of the sector
     
 def decreaseLayup(i):
     layups[i] = layups[i][2:]           # this removes the 1st 2 elements from the list
-    
+    Iz[i] = Iz_sec(ts[i], alphas[i])    # Recompute Iz of the sector
 
 Taus = []; M_s = []; ys = [];           # Declare arrays for stress distribution plots
 Nss = []; Nxs = []                      # Declare arrays for force distribution plots
@@ -149,11 +149,11 @@ for i in range(1, 7, 1):
             FI = FI_file.checkFI(Nx, Ns, ABD, layups[i]) #Get CLT Failure Index utilising Puck and Max. Stress Failure Criteria
             m = 1; a = 500; b = 450; k  = 1                    # Setting width and length of arbitrary plate approximation
             bucklingLoad = getBucklingLoadCCSS(D, 1, 500, 450)  # Buckling load in N / mm 
-            shearBL = getBucklingLoadShear(D, 500, 450)         # Shear buckling load in N/ mm
-            shearFOS = shearBL / abs(Ns)
-            Nx_ratio = Nx / bucklingLoad
-            Ns_ratio = (1/abs(Nx_ratio))**0.5
-            combined_buckling = getBucklingLoadCompAndShear(D, a, b, k)
+            shearBL = getBucklingLoadShear(D, 500, 450)         # Pure Shear buckling load in N/ mm
+            shearFOS = shearBL / abs(Ns)                         # Shear buckling Safety factor
+            Nx_ratio = Nx / bucklingLoad                         # Nx / Nx_crit
+            Ns_ratio = (1/abs(Nx_ratio))**0.5                    # Ns / Ns_crit = sqrt(Nx_crit / Nx)
+            combined_buckling = getBucklingLoadCompAndShear(D, a, b, k) # Combined Buckling load in Shear and Compression
             FI_FOS = 1/FI
             """Several safety checks below. Either increases or decreases layup based on SFs"""
             if FI_FOS < 2:

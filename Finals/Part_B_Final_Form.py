@@ -7,10 +7,11 @@ Description:
 # -- There are 42 total sectors of radians 0.15 in this fuselage. Each sector has 450mm width
 This file splits the fuselage up into sectors and analyses the min viable thickness of plys
 for that section. It reiterates over the fuselage several times, recomputing Iz and thickness if changed.
-After running, the print shows the final weight of the fuselage for part B
+After running, the print shows the final weight of the fuselage and weight reduction for part B
 
 
 @author: nathanrawiri
+@team: Roman Crimi, Roman Bruce
 """
 
 
@@ -82,7 +83,7 @@ def getBucklingLoadSSSS(D, m, a, b):
 
 def getBucklingLoadShear(D, a, b):
     D11 = D[0][0]; D12 = D[0][1]; D66 = D[2][2]; D22 = D[1][1];
-    return 9 * np.pi**4 * b / (32 * a**3 * (D11 + 2*D12 + 2*D66)*a**2/b**2 + D22 * a**4 / b**4) / 1.27
+    return 9 * np.pi**4 * b / (32 * a**3) * ((D11 + 2*(D12 + 2*D66))*a**2/b**2 + D22 * a**4 / b**4) / 1.27
 
 def getBucklingLoadCompAndShear(D, a, b, k):
     D11 = D[0][0]; D12 = D[0][1]; D66 = D[2][2]; D22 = D[1][1];
@@ -96,7 +97,7 @@ def getBucklingLoadCompAndShear(D, a, b, k):
 # 21 is half of the way around the circle. But adding an extra because top and bottom are wider circles
 # potential point of error if 20 is not enough sections.
 # But better to do it this way than appending because this way is more scalable for re-looping
-Iz = [2.1e12] * 22 #starting with what Iz / 42 if Iz is for constant t = 2.5mm all around
+Iz = [2.5e12] * 22 #starting with what Iz / 42 if Iz is for constant t = 2.5mm all around
 ts = [2.5] * 22 # Starting with 2.5mm average thickness all around
 ts[0] = 9.72
 layups = [[] for _ in range(22)] 
@@ -114,26 +115,28 @@ def increaseLayup(i):
     layups[i] = [45, -45] + layups[i]
     #print(f"Length = {len(layups[i])}")
     ts[i] = len(layups[i]) * 0.135 * 2   # 2 because symmetrical
-    Iz[i] = Iz_sec(ts[i], alphas[i])
+    Iz[i] = Iz_sec(ts[i], alphas[i])     # Recalculate Iz for sector
     
 def decreaseLayup(i):
     layups[i] = layups[i][2:]           # this removes the 1st 2 elements from the list
+    Iz[i] = Iz_sec(ts[i], alphas[i])    # Recalculate Iz for sector
     
 
 Taus = []; M_s = []; ys = [];           # Declare arrays for stress distribution plots
 Nss = []; Nxs = []                      # Declare arrays for force distribution plots
 
-alphas = []                             # Make list of the max angle for each segement
-alpha = 0.15/2 + 0.15                   #the first alpha
+alphas = [0]                            # Make list of the max angle for each segment
+alpha = 0.15/2 + 0.15 #the first alpha
 while alpha < np.pi:
     alphas.append(alpha); alpha += 0.15
 
-Iz_totals = []
-#while Iz_totals[-1] - Iz_totals[-2] < 5e11: # change this to a while loop checking tolerances
-for i in range(1, 7, 1):
+
+Iz_totals = [0, 5e15]
+while abs(Iz_totals[-1] - Iz_totals[-2]) > 5e11: # change this to a while loop checking tolerances
+#for i in range(1, 7, 1):                        # Can use this to force loop 6 times instead
     i = 1
     Taus = []; M_s = []; ys = []; Nss = []; Nxs = []; Ns_ratios = []; combined_bucklings = []; comps = []
-    for alpha in alphas:
+    for alpha in alphas[1:]:
         layups[i] = layups[i-1]                 # start by making this one the same as the previous
         y = -R*np.cos(alpha)                    # get the y value at the sector.
         """Start loop to adjust layup of sector"""
@@ -146,34 +149,32 @@ for i in range(1, 7, 1):
             Ns = Tau_sec * ts[i]; Nx = Mz * ts[i]       # Get Axial loads in  N/mm.
             D, ABD = getABD(layups[i])          # Get ABD Matrix
             """Check Failure Indexes"""
-            FI = FI_file.checkFI(Nx, Ns, ABD, layups[i]) #Get CLT Failure Index utilising Puck and Max. Stress Failure Criteria
-            m = 1; a = 500; b = 450; k  = 1                    # Setting width and length of arbitrary plate approximation
-            bucklingLoad = getBucklingLoadCCSS(D, 1, 500, 450)  # Buckling load in N / mm 
-            shearBL = getBucklingLoadShear(D, 500, 450)         # Shear buckling load in N/ mm
-            shearFOS = shearBL / abs(Ns)
-            Nx_ratio = Nx / bucklingLoad
-            Ns_ratio = (1/abs(Nx_ratio))**0.5
-            combined_buckling = getBucklingLoadCompAndShear(D, a, b, k)
+            FI = FI_file.checkFI(Nx, Ns, ABD, layups[i])    #Get CLT Failure Index utilising Puck and Max. Stress Failure Criteria
+            m = 4; a = 500; b = 450; k  = 2                     # Setting width and length of arbitrary plate approximation
+            bucklingLoad = getBucklingLoadCCSS(D, m, a, b)      # Buckling load in N / mm 
+            shearBL = getBucklingLoadShear(D, a, b)             # Shear buckling load in N/ mm
+            shearFOS = shearBL / abs(Ns)                        # Shear FOS 
+            Nx_ratio = Nx / bucklingLoad                        # Nx / Nx_Crit
+            Ns_ratio = (1/abs(Nx_ratio))**0.5                   # Nxy / Nxy_crit
+            combined_buckling = getBucklingLoadCompAndShear(D, a, b, k) # Combined Buckling Load Shear and Compression
             FI_FOS = 1/FI
             """Several safety checks below. Either increases or decreases layup based on SFs"""
             if FI_FOS < 2:
                 increaseLayup(i)
-            elif y < 0 and abs(combined_buckling) < 2 * (abs(Nx)+Ns):  # In bottom half, check combined buckling load
+            elif -1 < y < 0 and abs(combined_buckling) < 1.5 * (abs(Nx)):  # In bottom half, check combined buckling load
                 increaseLayup(i)
-            elif y < 0 and bucklingLoad > 2.3 * abs(Nx) and len(layups[i])>4:
+            elif y < 0 and bucklingLoad > 2.1 * abs(Nx) and len(layups[i])>4:
                 decreaseLayup(i)
             elif y < -1 and bucklingLoad < 1.5 * abs(Nx):
                 increaseLayup(i)
-            elif y > 0 and (abs(combined_buckling) < 3 * (Nx+Ns)): # and FI < 0.33: #and FI > 0.33:
-                increaseLayup(i)
-                print(f"buck: {abs(combined_buckling)}: Nx: {Nx}, Ns: {Ns}")
-            elif y > 0 and abs(combined_buckling) > 3 * (Nx+Ns) and len(layups[i])>4 and FI < 0.33: #and FI > 0.33:
+            elif y > 0 and abs(shearFOS) > 2 and len(layups[i])>4:
                 decreaseLayup(i)
-            elif y > 0 and FI_FOS < 400:
+            elif y >= 0 and shearFOS < 1.2:
+                print("loop")
                 increaseLayup(i)
             else:
                 adjusting_layup = False         # FI's are all good. Layup is good. Move to next sector
-        len_layups[i] = len(layups[i])
+        len_layups[i] = len(layups[i])    
         ys.append(y)                            # append for stress distribution curve 
         Taus.append(Tau_sec);M_s.append(Mz);    # append for stress distribution curve 
         Nxs.append(Nx); Nss.append(Ns)          # append for force distribution curve
@@ -184,6 +185,8 @@ for i in range(1, 7, 1):
         combined_bucklings.append(combined_buckling)
         comps.append(bucklingLoad)
         Ns_ratios.append(Ns_ratio)
+        Iz[i] = Iz_sec(ts[i], alphas[i]) 
+        Iz_total = Iz[0] + Iz[-1] + sum(Iz[1:-1])*2 # *2 because both sides of fuse
         ts[i] = len(layups[i]) * t * 2          # thickness of the laminate * 2 because symmetrical
         weight_section[i] = len_layups[i] * 2 * 0.135 * 0.5 * 0.45 / 1000 * 1610 
         #Finished this iteration of loop
@@ -196,7 +199,7 @@ for i in range(1, 7, 1):
 #print(f"Iz_final = {Iz_total}")
     
 weight_section[0] = weight_section[1]; weight_section[-1] = weight_section[-2]
-weight_total = weight_section[0] + weight_section[-1] + sum(weight_section[1:-1])*2
+weight_total = weight_section[0] + weight_section[-1] + sum(weight_section[1:-1]) * 2
 print(f"Weight Composite = {weight_total:.2f} kg")
 weight_Al = 2 * np.pi * 3 * 7/1000 * 0.5 * 2770 
 print(f"Weight aluminium = {weight_Al:.2f} kg")
